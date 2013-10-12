@@ -22,13 +22,15 @@ namespace NetChange {
         }
     }
 
-    class Server : Connection {
+    class Server {
         TcpListener server;
 
         public Server(short portNumber) {
             server = new TcpListener(IPAddress.Any, portNumber);
-            client = server.AcceptTcpClient();
-            finalizeCreation();
+        }
+
+        public Connection ConnectTo(short portNumber) {
+            return new Client(portNumber);
         }
     }
 
