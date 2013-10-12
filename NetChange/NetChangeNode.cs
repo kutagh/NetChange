@@ -14,13 +14,13 @@ namespace NetChange {
         /// The port number of this node
         /// </summary>
         public short PortNumber { get { return this.value; } }
-        
+        public bool Updating { get; set; }
         /// <summary>
         /// Constructor for a NetChange Node
         /// </summary>
         /// <param name="portNumber">Port number to be used for this node</param>
-        public NetChangeNode(short portNumber) : base(portNumber) {
-            
+        public NetChangeNode(short portNumber, bool startUpdating = false) : base(portNumber) {
+            Updating = startUpdating;
         }
             
         /// <summary>

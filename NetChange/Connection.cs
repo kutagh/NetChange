@@ -16,6 +16,7 @@ namespace NetChange {
         protected StreamWriter writer;
         protected StreamReader reader;
         protected TcpClient client;
+        protected string handshake = "Connecting from ";
         
         /// <summary>
         /// Once a client is set, call this to create the stream reader and writer
@@ -34,13 +35,34 @@ namespace NetChange {
         public static Connection ConnectTo(short portNumber) {
             return new Client(portNumber);
         }
+
+        public string ReadMessage() {
+            var message = reader.ReadLine();
+            if (message == null) return "";
+            return message;
+        }
+
+        public void SendMessage(string message) {
+            writer.Write(message);
+        }
+
+        public string CreateHandshake(short portNumber) {
+            return string.Format("{0}{1}", handshake, portNumber);
+        }
+
+        public short ParseHandshake(string message) {
+            if (message.StartsWith(handshake))
+                return short.Parse(message.Substring(handshake.Length));
+            else
+                return -1;
+        }
     }
 
     /// <summary>
     /// Class to accept socket connections
     /// </summary>
     class Server {
-        TcpListener server;
+        public TcpListener server;
 
         /// <summary>
         /// Creates a listener
@@ -70,6 +92,7 @@ namespace NetChange {
         public Client(short portNumber) {
             client = new TcpClient("localhost", portNumber);
             finalizeCreation();
+            SendMessage(CreateHandshake(portNumber));
         }
 
         /// <summary>
