@@ -16,8 +16,11 @@ namespace NetChange {
                 // Set console position
                 Console.SetWindowPosition(int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)));
                 iterator += 2;
+                Console.Title = string.Format("port = {0}, x = {1}, y = {2}", args[iterator], args[0].Substring(1), args[1].Substring(1)); // Port number
             }
-            Console.Title = args[iterator]; // Port number
+            else {
+                Console.Title = string.Format("port = {0}", args[iterator]); // Port number
+            }
             var portNumber = short.Parse(args[iterator]);
             var list = new List<short>();
             while (++iterator < args.Length) // All neighbors
