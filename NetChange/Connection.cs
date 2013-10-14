@@ -80,6 +80,7 @@ namespace NetChange {
         /// </summary>
         /// <returns>A connection</returns>
         public Connection AcceptConnection() {
+            Console.WriteLine("Listening for connection");
             return new Client(server.AcceptTcpClient());
         }
     }

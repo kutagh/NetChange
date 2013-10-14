@@ -21,17 +21,17 @@ namespace NetChange {
             else {
                 Console.Title = string.Format("port = {0}", args[iterator]); // Port number
             }
-            var portNumber = short.Parse(args[iterator]);
+            var myPortNumber = short.Parse(args[iterator]);
             var list = new List<short>();
             while (++iterator < args.Length) // All neighbors
                 list.Add(short.Parse(args[iterator]));
 
             connected = new Dictionary<short, Client>();
-            server = new Server(portNumber);
+            server = new Server(myPortNumber);
             // Create listener
             Task task = new Task(Listen);
-            //task.Start();
-            var connectWith = list.Where(x => x > portNumber); // Filter the neighbors with a lower port number
+            task.Start();
+            var connectWith = list.Where(x => x > myPortNumber); // Filter the neighbors with a lower port number
             foreach (var port in connectWith) {
                 bool retry = true;
                 int attempt = 0;
@@ -47,15 +47,18 @@ namespace NetChange {
                     }
                 }
             }
-            server.AcceptConnection();
-
+            
             // Set up local graph
-            node = new NetChangeNode(portNumber);
+            node = new NetChangeNode(myPortNumber);
             foreach (var port in list) node.AddNeighbor(port);
             node.Updating = true;
-            foreach (var client in connected) Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
+            foreach (var client in connected) {
+                Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
+                var c = client.Value;
+                Task.Factory.StartNew(() => ListenForMessages(c));
+            }
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
-
+            foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Console.ReadLine();
         }
 
@@ -67,9 +70,14 @@ namespace NetChange {
         static void Listen() {
             var client = server.AcceptConnection();
             var handShake = client.ReadMessage();
-            connected.Add(client.ParseHandshake(handShake),client as Client);
+            connected.Add(client.ParseHandshake(handShake), client as Client);
             Console.WriteLine("Accepted connection");
             Listen();
+        }
+
+        static void ListenForMessages(Client c) {
+            Console.WriteLine(c.ReadMessage());
+            ListenForMessages(c);
         }
     }
 }
