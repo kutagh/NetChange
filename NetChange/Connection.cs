@@ -17,6 +17,8 @@ namespace NetChange {
         protected StreamReader reader;
         protected TcpClient client;
         protected string handshake = "Connecting from ";
+        public bool IsConnected { get { return client != null; } }
+        public short ConnectedTo { get; protected set; }
         
         /// <summary>
         /// Once a client is set, call this to create the stream reader and writer
@@ -70,6 +72,7 @@ namespace NetChange {
         /// <param name="portNumber">Port number to listen on</param>
         public Server(short portNumber) {
             server = new TcpListener(IPAddress.Any, portNumber);
+            server.Start();
         }
 
         /// <summary>
@@ -91,19 +94,20 @@ namespace NetChange {
         /// <param name="portNumber">The port number of the host to connect to</param>
         public Client(short portNumber) {
             bool retry = true;
-            int i;
-            for (i = 0; i < 1000 && !retry; i++) {
+            for (int i = 0; i < 1000 && retry; i++) {
                 retry = false;
                 try {
-                    client = new TcpClient("localhost", portNumber);
-                    finalizeCreation();
+                    client = new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
+                    finalizeCreation(); 
                     SendMessage(CreateHandshake(portNumber));
+                    Console.WriteLine("Connected to {0}", portNumber);
+                    ConnectedTo = portNumber;
                 }
-                catch {
+                catch    {
                     retry = true;
                 }
             }
-            if (i > 1000)
+            if (retry)
                 throw new TimeoutException();
         }
 

@@ -30,24 +30,37 @@ namespace NetChange {
             server = new Server(portNumber);
             // Create listener
             Task task = new Task(Listen);
+            //task.Start();
             var connectWith = list.Where(x => x > portNumber); // Filter the neighbors with a lower port number
             foreach (var port in connectWith) {
-                var client = new Client(port);
-                connected.Add(port, client);
+                bool retry = true;
+                int attempt = 0;
+                while (retry) {
+                    try {
+                        var client = new Client(port);
+                        connected.Add(port, client);
+                        retry = false;
+                    }
+                    catch {
+                        Console.WriteLine("Failed to connect, retrying for {0}th time", attempt++);
+                        System.Threading.Thread.Sleep(3);
+                    }
+                }
             }
+            server.AcceptConnection();
 
             // Set up local graph
             node = new NetChangeNode(portNumber);
             foreach (var port in list) node.AddNeighbor(port);
             node.Updating = true;
-            
-            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            foreach (var client in connected) Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
+            //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 
             Console.ReadLine();
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
-            //foreach (var nb in node.neighbors) node.RemoveNeighbor(nb as NetChangeNode);
+            foreach (var nb in node.neighbors) node.RemoveNeighbor(nb as NetChangeNode);
 
         }
 
@@ -55,6 +68,8 @@ namespace NetChange {
             var client = server.AcceptConnection();
             var handShake = client.ReadMessage();
             connected.Add(client.ParseHandshake(handShake),client as Client);
+            Console.WriteLine("Accepted connection");
+            Listen();
         }
     }
 }
