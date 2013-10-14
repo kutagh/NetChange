@@ -42,10 +42,13 @@ namespace NetChange {
             node.Updating = true;
             
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+
+            Console.ReadLine();
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
-            foreach (var nb in node.neighbors) node.RemoveNeighbor(nb as NetChangeNode);
+            //foreach (var nb in node.neighbors) node.RemoveNeighbor(nb as NetChangeNode);
+
         }
 
         static void Listen() {

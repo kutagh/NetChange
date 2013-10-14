@@ -90,9 +90,21 @@ namespace NetChange {
         /// </summary>
         /// <param name="portNumber">The port number of the host to connect to</param>
         public Client(short portNumber) {
-            client = new TcpClient("localhost", portNumber);
-            finalizeCreation();
-            SendMessage(CreateHandshake(portNumber));
+            bool retry = true;
+            int i;
+            for (i = 0; i < 1000 && !retry; i++) {
+                retry = false;
+                try {
+                    client = new TcpClient("localhost", portNumber);
+                    finalizeCreation();
+                    SendMessage(CreateHandshake(portNumber));
+                }
+                catch {
+                    retry = true;
+                }
+            }
+            if (i > 1000)
+                throw new TimeoutException();
         }
 
         /// <summary>
