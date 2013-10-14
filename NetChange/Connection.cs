@@ -97,7 +97,7 @@ namespace NetChange {
             for (int i = 0; i < 1000 && retry; i++) {
                 retry = false;
                 try {
-                    client = new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
+                    client = new TcpClient("localhost", portNumber); // new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
                     finalizeCreation(); 
                     SendMessage(CreateHandshake(portNumber));
                     Console.WriteLine("Connected to {0}", portNumber);
