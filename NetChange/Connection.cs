@@ -41,14 +41,15 @@ namespace NetChange {
         public string ReadMessage() {
             Console.WriteLine("Reading");
             var message = reader.ReadLine();
-            Console.Write("Have received a message: ");
-            Console.WriteLine(message);
+            Console.WriteLine("Have received a message: " + message);
             if (message == null) { Console.WriteLine("Error"); return ""; }
             return message;
         }
 
         public void SendMessage(string message) {
+            Console.WriteLine("Writing");
             writer.Write(message);
+            Console.WriteLine("Wrote " + message);
         }
 
         public string CreateHandshake(short portNumber) {
