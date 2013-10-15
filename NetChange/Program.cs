@@ -68,14 +68,16 @@ namespace NetChange {
         }
 
         static void Listen() {
-            var client = server.AcceptConnection();
+            var client = server.AcceptConnection() as Client;
             var handShake = client.ReadMessage();
-            connected.Add(client.ParseHandshake(handShake), client as Client);
+            connected.Add(client.ParseHandshake(handShake), client);
+            Task.Factory.StartNew(() => ListenForMessages(client));
             Console.WriteLine("Accepted connection");
             Listen();
         }
 
         static void ListenForMessages(Client c) {
+            Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
             Console.WriteLine(c.ReadMessage());
             ListenForMessages(c);
         }

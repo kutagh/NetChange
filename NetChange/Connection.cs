@@ -39,8 +39,11 @@ namespace NetChange {
         }
 
         public string ReadMessage() {
+            Console.WriteLine("Reading");
             var message = reader.ReadLine();
-            if (message == null) return "";
+            Console.Write("Have received a message: ");
+            Console.WriteLine(message);
+            if (message == null) { Console.WriteLine("Error"); return ""; }
             return message;
         }
 
