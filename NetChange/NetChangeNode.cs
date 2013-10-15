@@ -15,6 +15,10 @@ namespace NetChange {
         /// </summary>
         public short PortNumber { get { return this.value; } }
         public bool Updating { get; set; }
+
+        public Dictionary<short, int> distances = new Dictionary<short, int>();     //list of known/connected nodes and distances to the others from there
+        public Dictionary<short, short> prefNeigh = new Dictionary<short, short>(); //to whom to send messages when it has to go to some node
+
         /// <summary>
         /// Constructor for a NetChange Node
         /// </summary>
@@ -29,6 +33,16 @@ namespace NetChange {
         /// <param name="node">NetChange node to add</param>
         public void AddNeighbor(NetChangeNode node) {
             base.AddNeighbor(node);
+
+            if (distances.ContainsKey(node.value))
+            {
+                distances[node.value] = 1;
+            }
+            else
+            {
+                distances.Add(node.value, 1);
+            }
+
             Update();
         }
 

@@ -45,7 +45,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NetChange.cs" />
     <Compile Include="Connection.cs" />
     <Compile Include="NetChangeNode.cs" />
     <Compile Include="Node.cs" />
