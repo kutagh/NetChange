@@ -96,21 +96,21 @@ namespace NetChange {
         /// </summary>
         public void UpdateNeighbors() {
             // convert distances[PortNumber] to string representation
-            string message = "";
+            var builder = new StringBuilder();
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
-                if (message != "") message += "\n";
-                message += kvp.Key.ToString() + ":" + kvp.Value.ToString();
+                builder.AppendFormat("{0}:{1};", kvp.Key.ToString(), kvp.Value.ToString());
             }
+            builder.Remove(builder.Length - 1, 1);
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber and "DistList"
-                string package = neighbor.value.ToString() + "\n" + "DistList\n" + message;
+                string package = string.Format("{0};DistList;{1}" ,neighbor.value.ToString(), builder);
             } // Send update
         }
 
         public void InterpretMess(string package) {
             // convert package back to a distances[portNumber]
-            string[] unwrap = package.Split('\n');
+            string[] unwrap = package.Split(';');
             short senderNr = short.Parse(unwrap[0]);
             if (senderNr != PortNumber)
             {
