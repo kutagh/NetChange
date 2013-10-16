@@ -42,9 +42,12 @@ namespace NetChange {
                 int attempt = 0;
                 while (retry) {
                     try {
-                        var client = new Client(port);
+                        var client = new Client(myPortNumber, port);
                         connected.Add(port, client);
                         retry = false;
+#if DEBUG
+                        Console.WriteLine(client.CreateHandshake(myPortNumber));
+#endif
                     }
                     catch {
 #if DEBUG
@@ -97,6 +100,7 @@ namespace NetChange {
             Console.WriteLine("Adding to list of connected clients");
 #endif
             connected.Add(port, client);
+            client.ConnectedTo = port;
 #if DEBUG   
             Console.WriteLine("Starting to listen for messages from {0}", port);
 #endif

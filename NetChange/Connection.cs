@@ -18,7 +18,7 @@ namespace NetChange {
         protected TcpClient client;
         protected string handshake = "Connecting from ";
         public bool IsConnected { get { return client != null; } }
-        public short ConnectedTo { get; protected set; }
+        public short ConnectedTo { get; set; }
 
         /// <summary>
         /// Once a client is set, call this to create the stream reader and writer
@@ -32,10 +32,10 @@ namespace NetChange {
         /// <summary>
         /// Creates a connection as a client to the specified port number on localhost
         /// </summary>
-        /// <param name="portNumber">The port number of the host on localhost</param>
+        /// <param name="targetPortNumber">The port number of the host on localhost</param>
         /// <returns>A connection to the host</returns>
-        public static Connection ConnectTo(short portNumber) {
-            return new Client(portNumber);
+        public static Connection ConnectTo(short myPortNumber, short targetPortNumber) {
+            return new Client(myPortNumber, targetPortNumber);
         }
 
         public string ReadMessage() {
@@ -111,19 +111,19 @@ namespace NetChange {
         /// <summary>
         /// Create a client that attempts to connect to a specified host
         /// </summary>
-        /// <param name="portNumber">The port number of the host to connect to</param>
-        public Client(short portNumber) {
+        /// <param name="targetPortNumber">The port number of the host to connect to</param>
+        public Client(short myPortNumber, short targetPortNumber) {
             bool retry = true;
             for (int i = 0; i < 1000 && retry; i++) {
                 retry = false;
                 try {
-                    client = new TcpClient("localhost", portNumber); // new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
+                    client = new TcpClient("localhost", targetPortNumber); // new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
                     finalizeCreation();
-                    SendMessage(CreateHandshake(portNumber));
+                    SendMessage(CreateHandshake(myPortNumber));
 #if DEBUG
-                    Console.WriteLine("Connected to {0}", portNumber);
+                    Console.WriteLine("Connected to {0}", targetPortNumber);
 #endif
-                    ConnectedTo = portNumber;
+                    ConnectedTo = targetPortNumber;
                 }
                 catch    {
                     retry = true;
