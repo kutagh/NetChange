@@ -104,7 +104,7 @@ namespace NetChange {
             builder.Remove(builder.Length - 1, 1);
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber and "DistList"
-                string package = string.Format("{0};DistList;{1}" ,neighbor.value.ToString(), builder);
+                string package = string.Format("{0};DistList;{1}" ,neighbor.value.ToString(), builder.ToString());
             } // Send update
         }
 
