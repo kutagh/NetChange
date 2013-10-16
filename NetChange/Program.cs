@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
@@ -10,7 +11,9 @@ namespace NetChange {
         static Server server;
         static Dictionary<short,Client> connected;
         static void Main(string[] args) {
-
+            if (args.Length == 0) {
+                args = new string[] { "1000", "1001" };
+            }
             int iterator = 0;
             if (args[0][0] == 'p') {
                 // Set console position
@@ -29,8 +32,10 @@ namespace NetChange {
             connected = new Dictionary<short, Client>();
             server = new Server(myPortNumber);
             // Create listener
-            Task task = new Task(Listen);
-            task.Start();
+            Thread th = new Thread(new ThreadStart(Listen));
+            th.Start();
+            //Task task = new Task(Listen);
+            //task.Start();
             var connectWith = list.Where(x => x > myPortNumber); // Filter the neighbors with a lower port number
             foreach (var port in connectWith) {
                 bool retry = true;
@@ -42,7 +47,9 @@ namespace NetChange {
                         retry = false;
                     }
                     catch {
+#if DEBUG
                         Console.WriteLine("Failed to connect, retrying for {0}th time", attempt++);
+#endif
                         System.Threading.Thread.Sleep(3);
                     }
                 }
@@ -53,13 +60,19 @@ namespace NetChange {
             foreach (var port in list) node.AddNeighbor(port);
             node.Updating = true;
             foreach (var client in connected) {
+#if DEBUG
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
+#endif
                 var c = client.Value;
-                Task.Factory.StartNew(() => ListenForMessages(c));
+                Thread listener = new Thread(new ThreadStart(() => ListenForMessages(c)));
+                listener.Start();
+                //Task.Factory.StartNew(() => ListenForMessages(c));
             }
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+#if DEBUG
             foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Console.ReadLine();
+#endif
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
@@ -68,15 +81,44 @@ namespace NetChange {
         }
 
         static void Listen() {
-            var client = server.AcceptConnection();
+#if DEBUG   
+            Console.WriteLine("Listening");
+#endif
+            var client = server.AcceptConnection() as Client;
+#if DEBUG   
+            Console.WriteLine("Client connected");
+#endif
             var handShake = client.ReadMessage();
-            connected.Add(client.ParseHandshake(handShake), client as Client);
+#if DEBUG   
+            Console.WriteLine("Handshake message: " + handShake);
+#endif
+            var port = client.ParseHandshake(handShake);
+#if DEBUG   
+            Console.WriteLine("Adding to list of connected clients");
+#endif
+            connected.Add(port, client);
+#if DEBUG   
+            Console.WriteLine("Starting to listen for messages from {0}", port);
+#endif
+            Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
+            listener.Start();
+            
+            //Task.Factory.StartNew(() => ListenForMessages(client));
+#if DEBUG
             Console.WriteLine("Accepted connection");
+#endif
             Listen();
         }
 
         static void ListenForMessages(Client c) {
-            Console.WriteLine(c.ReadMessage());
+#if DEBUG
+            Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
+#endif
+            var message = c.ReadMessage();
+#if DEBUG
+            Console.WriteLine(message);
+#endif
+            // Handle messages
             ListenForMessages(c);
         }
     }
