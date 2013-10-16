@@ -85,7 +85,7 @@ namespace NetChange {
             }
             distances.Remove(portNumber);
             foreach (KeyValuePair<short, short> pref in prefNeigh.Where(kvp => kvp.Value == portNumber).ToList())
-            {   //remove all prefered connections going through the now possibly non-existent node
+            {   //remove all preferred connections going through the now possibly non-existent node
                 prefNeigh.Remove(pref.Key);
             }
             Update(portNumber);
