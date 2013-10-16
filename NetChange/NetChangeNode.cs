@@ -17,6 +17,7 @@ namespace NetChange {
         public bool Updating { get; set; }
         char entrySeparator = ';';
         char valueSeparator = ':';
+        string headerSeparator = "DistList";
 
         public Dictionary<short, Dictionary<short, int>> distances = new Dictionary<short, Dictionary<short, int>>();
             //list of known nodes and distances to the others from there
@@ -105,7 +106,7 @@ namespace NetChange {
             }
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber and "DistList"
-                string package = string.Format("{0};DistList{1}" ,neighbor.value.ToString(), builder.ToString());
+                string package = string.Format("{0}{1}{2}{3}", neighbor.value.ToString(), entrySeparator, headerSeparator, builder.ToString());
             } // Send update
         }
 
@@ -120,7 +121,7 @@ namespace NetChange {
             }
             else
             {
-                if (unwrap[1] == "DistList")
+                if (unwrap[1] == headerSeparator)
                     for (int i = 2; i < unwrap.Length; i++)
                     {
                         string[] unpack = unwrap[i].Split(valueSeparator);
