@@ -15,6 +15,8 @@ namespace NetChange {
         /// </summary>
         public short PortNumber { get { return this.value; } }
         public bool Updating { get; set; }
+        char entrySeparator = ';';
+        char valueSeparator = ':';
 
         public Dictionary<short, Dictionary<short, int>> distances = new Dictionary<short, Dictionary<short, int>>();
             //list of known nodes and distances to the others from there
@@ -99,18 +101,17 @@ namespace NetChange {
             var builder = new StringBuilder();
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
-                builder.AppendFormat("{0}:{1};", kvp.Key.ToString(), kvp.Value.ToString());
+                builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
             }
-            builder.Remove(builder.Length - 1, 1);
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber and "DistList"
-                string package = string.Format("{0};DistList;{1}" ,neighbor.value.ToString(), builder.ToString());
+                string package = string.Format("{0};DistList{1}" ,neighbor.value.ToString(), builder.ToString());
             } // Send update
         }
 
         public void InterpretMess(string package) {
             // convert package back to a distances[portNumber]
-            string[] unwrap = package.Split(';');
+            string[] unwrap = package.Split(entrySeparator);
             short senderNr = short.Parse(unwrap[0]);
             if (senderNr != PortNumber)
             {
@@ -122,7 +123,7 @@ namespace NetChange {
                 if (unwrap[1] == "DistList")
                     for (int i = 2; i < unwrap.Length; i++)
                     {
-                        string[] unpack = unwrap[i].Split(':');
+                        string[] unpack = unwrap[i].Split(valueSeparator);
                         if (distances.ContainsKey(short.Parse(unpack[0])))
                         {
                             //only update
