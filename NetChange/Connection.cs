@@ -48,7 +48,7 @@ namespace NetChange {
 
         public void SendMessage(string message) {
             Console.WriteLine("Writing");
-            writer.Write(message);
+            writer.WriteLine(message);
             Console.WriteLine("Wrote " + message);
         }
 
@@ -98,15 +98,22 @@ namespace NetChange {
         /// </summary>
         /// <param name="portNumber">The port number of the host to connect to</param>
         public Client(short portNumber) {
+            Console.WriteLine("1");
             bool retry = true;
             for (int i = 0; i < 1000 && retry; i++) {
+                Console.WriteLine(2);
                 retry = false;
                 try {
+                    Console.WriteLine(3);
                     client = new TcpClient("localhost", portNumber); // new TcpClient(new IPEndPoint(new IPAddress(new byte[]{127,0,0,1}), portNumber));
-                    finalizeCreation(); 
+                    Console.WriteLine(4);
+                    finalizeCreation();
+                    Console.WriteLine(5);
                     SendMessage(CreateHandshake(portNumber));
+                    Console.WriteLine(6);
                     Console.WriteLine("Connected to {0}", portNumber);
                     ConnectedTo = portNumber;
+                    Console.WriteLine(7);
                 }
                 catch    {
                     retry = true;

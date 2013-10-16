@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
@@ -10,7 +11,9 @@ namespace NetChange {
         static Server server;
         static Dictionary<short,Client> connected;
         static void Main(string[] args) {
-
+            if (args.Length == 0) {
+                args = new string[] { "1000", "1001" };
+            }
             int iterator = 0;
             if (args[0][0] == 'p') {
                 // Set console position
@@ -29,8 +32,10 @@ namespace NetChange {
             connected = new Dictionary<short, Client>();
             server = new Server(myPortNumber);
             // Create listener
-            Task task = new Task(Listen);
-            task.Start();
+            Thread th = new Thread(new ThreadStart(Listen));
+            th.Start();
+            //Task task = new Task(Listen);
+            //task.Start();
             var connectWith = list.Where(x => x > myPortNumber); // Filter the neighbors with a lower port number
             foreach (var port in connectWith) {
                 bool retry = true;
@@ -38,7 +43,9 @@ namespace NetChange {
                 while (retry) {
                     try {
                         var client = new Client(port);
+
                         connected.Add(port, client);
+                        Console.WriteLine("Sander");
                         retry = false;
                     }
                     catch {
@@ -55,7 +62,9 @@ namespace NetChange {
             foreach (var client in connected) {
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
                 var c = client.Value;
-                Task.Factory.StartNew(() => ListenForMessages(c));
+                Thread listener = new Thread(new ThreadStart(() => ListenForMessages(c)));
+                listener.Start();
+                //Task.Factory.StartNew(() => ListenForMessages(c));
             }
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
@@ -77,7 +86,10 @@ namespace NetChange {
             Console.WriteLine("Adding to list of connected clients");
             connected.Add(port, client);
             Console.WriteLine("Starting to listen for messages from {0}", port);
-            Task.Factory.StartNew(() => ListenForMessages(client));
+            Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
+            listener.Start();
+            
+            //Task.Factory.StartNew(() => ListenForMessages(client));
             Console.WriteLine("Accepted connection");
             Listen();
         }
