@@ -43,13 +43,13 @@ namespace NetChange {
                 while (retry) {
                     try {
                         var client = new Client(port);
-
                         connected.Add(port, client);
-                        Console.WriteLine("Sander");
                         retry = false;
                     }
                     catch {
+#if DEBUG
                         Console.WriteLine("Failed to connect, retrying for {0}th time", attempt++);
+#endif
                         System.Threading.Thread.Sleep(3);
                     }
                 }
@@ -60,15 +60,19 @@ namespace NetChange {
             foreach (var port in list) node.AddNeighbor(port);
             node.Updating = true;
             foreach (var client in connected) {
+#if DEBUG
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
+#endif
                 var c = client.Value;
                 Thread listener = new Thread(new ThreadStart(() => ListenForMessages(c)));
                 listener.Start();
                 //Task.Factory.StartNew(() => ListenForMessages(c));
             }
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+#if DEBUG
             foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Console.ReadLine();
+#endif
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
@@ -77,26 +81,44 @@ namespace NetChange {
         }
 
         static void Listen() {
+#if DEBUG   
             Console.WriteLine("Listening");
+#endif
             var client = server.AcceptConnection() as Client;
+#if DEBUG   
             Console.WriteLine("Client connected");
+#endif
             var handShake = client.ReadMessage();
+#if DEBUG   
             Console.WriteLine("Handshake message: " + handShake);
+#endif
             var port = client.ParseHandshake(handShake);
+#if DEBUG   
             Console.WriteLine("Adding to list of connected clients");
+#endif
             connected.Add(port, client);
+#if DEBUG   
             Console.WriteLine("Starting to listen for messages from {0}", port);
+#endif
             Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
             listener.Start();
             
             //Task.Factory.StartNew(() => ListenForMessages(client));
+#if DEBUG
             Console.WriteLine("Accepted connection");
+#endif
             Listen();
         }
 
         static void ListenForMessages(Client c) {
+#if DEBUG
             Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
-            Console.WriteLine(c.ReadMessage());
+#endif
+            var message = c.ReadMessage();
+#if DEBUG
+            Console.WriteLine(message);
+#endif
+            // Handle messages
             ListenForMessages(c);
         }
     }
