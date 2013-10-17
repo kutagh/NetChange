@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,6 +11,12 @@ namespace NetChange {
         static NetChangeNode node;
         static Server server;
         static Dictionary<short,Client> connected;
+        static int SlowDown = 0;
+        static long DistanceEstimatesSent = 0;
+        static bool PrintStatusChanges = false;
+
+        static string parameterError = "The {0} parameter '{1}' was not correct, please enter {2}.";
+
         static void Main(string[] args) {
             if (args.Length == 0) {
                 args = new string[] { "1000", "1001" };
@@ -76,6 +83,75 @@ namespace NetChange {
             foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Console.ReadLine();
 #endif
+            while (true) {
+                var input = Console.ReadLine();
+
+
+                if (input.StartsWith("S")) {
+                    if (int.TryParse(input.Substring(2), out SlowDown) && SlowDown > 0)
+                        continue;
+                    Console.WriteLine(parameterError, "slowdown", "n", "a positive number");
+                    if (SlowDown < 0) SlowDown = 0;
+                    continue;
+                }
+                if (input.StartsWith("R")) {
+                    node.PrintRoutingTable();
+                    continue;
+                }
+                if (input.StartsWith("M")) {
+                    Console.WriteLine("Total number of distance estimations sent: {0}", DistanceEstimatesSent);
+                    continue;
+                }
+                if (input.StartsWith("D")) {
+                    short target;
+                    if (short.TryParse(input.Substring(2), out target)) {
+                        if (connected.ContainsKey(target)) {
+                            node.RemoveNeighbor(target);
+                            connected.Remove(target);
+                        }
+                        else
+                            Console.WriteLine("Port {0} is not connected to this process", target);
+                        continue;
+                    }
+                    Console.WriteLine(parameterError, "delete", "port", "a valid port number");
+                    continue;
+                }
+                if (input.StartsWith("C")) {
+                    short target;
+                    if (short.TryParse(input.Substring(2), out target)) {
+                        node.AddNeighbor(target);
+                        continue;
+                    }
+                    Console.WriteLine(parameterError, "create", "port", "a valid port number");
+                }
+                if (input.StartsWith("B")) {
+                    var split = input.Split(' ');
+                    short target;
+                    if (split.Length > 1 && short.TryParse(input.Substring(2), out target)) {
+                        var message = new StringBuilder();
+                        for (int i = 2; i < split.Length; i++)
+                            message.AppendFormat(" {0}", split[i]);
+                        connected[target].SendMessage(message.ToString());
+                        continue;
+                    }
+                    if (split.Length > 1)
+                        Console.WriteLine(parameterError, "broadcast", "port", "a valid port number");
+                    else
+                        Console.WriteLine(parameterError, "broadcast", "message", "a valid message");
+                }
+                if (input.StartsWith("T")) {
+                    if (input.Substring(2).Equals("on", StringComparison.CurrentCultureIgnoreCase))
+                        PrintStatusChanges = true;
+                    else if (input.Substring(2).Equals("off", StringComparison.CurrentCultureIgnoreCase))
+                        PrintStatusChanges = false;
+                    else
+                        Console.WriteLine(parameterError, "toggle status changes", "status", "'on' or 'off'");
+                    continue;
+                }
+
+                Console.WriteLine("The command {0} could not be found. Please retry.", input);
+
+            }
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
@@ -122,6 +198,12 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine(message);
 #endif
+            if (SlowDown > 0) {
+                Thread.Sleep(SlowDown);
+                //var stopwatch = new Stopwatch();
+                //stopwatch.Start();
+                //while (stopwatch.ElapsedMilliseconds < SlowDown) { }
+            }
             // Handle messages
             ListenForMessages(c);
         }

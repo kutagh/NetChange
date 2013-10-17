@@ -213,6 +213,10 @@ namespace NetChange {
                 }
             return result; //return the smallest
         }
+
+        internal void PrintRoutingTable() {
+            throw new NotImplementedException();
+        }
     }
     
 }
