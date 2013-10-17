@@ -7,10 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
+    static class Globals { public static Dictionary<short, Client> connected; }
+
     class NetwProg {
         static NetChangeNode node;
         static Server server;
-        static Dictionary<short,Client> connected;
+        static Dictionary<short,Client> Oldconnected;
         static int SlowDown = 0;
         static long DistanceEstimatesSent = 0;
         static bool PrintStatusChanges = false;
@@ -36,7 +38,7 @@ namespace NetChange {
             while (++iterator < args.Length) // All neighbors
                 list.Add(short.Parse(args[iterator]));
 
-            connected = new Dictionary<short, Client>();
+            Globals.connected = new Dictionary<short, Client>();
             server = new Server(myPortNumber);
             // Create listener
             Thread th = new Thread(new ThreadStart(Listen));
@@ -50,7 +52,7 @@ namespace NetChange {
                 while (retry) {
                     try {
                         var client = new Client(myPortNumber, port);
-                        connected.Add(port, client);
+                        Globals.connected.Add(port, client);
                         retry = false;
 #if DEBUG
                         Console.WriteLine(client.CreateHandshake(myPortNumber));
@@ -69,7 +71,7 @@ namespace NetChange {
             node = new NetChangeNode(myPortNumber);
             foreach (var port in list) node.AddNeighbor(port);
             node.Updating = true;
-            foreach (var client in connected) {
+            foreach (var client in Globals.connected) {
 #if DEBUG
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
 #endif
@@ -80,7 +82,7 @@ namespace NetChange {
             }
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 #if DEBUG
-            foreach (var client in connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
+            foreach (var client in Globals.connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Console.ReadLine();
 #endif
             while (true) {
@@ -105,9 +107,9 @@ namespace NetChange {
                 if (input.StartsWith("D")) {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
-                        if (connected.ContainsKey(target)) {
+                        if (Globals.connected.ContainsKey(target)) {
                             node.RemoveNeighbor(target);
-                            connected.Remove(target);
+                            Globals.connected.Remove(target);
                         }
                         else
                             Console.WriteLine("Port {0} is not connected to this process", target);
@@ -131,7 +133,7 @@ namespace NetChange {
                         var message = new StringBuilder();
                         for (int i = 2; i < split.Length; i++)
                             message.AppendFormat(" {0}", split[i]);
-                        connected[target].SendMessage(message.ToString());
+                        Globals.connected[target].SendMessage(message.ToString());
                         continue;
                     }
                     if (split.Length > 1)
@@ -175,7 +177,7 @@ namespace NetChange {
 #if DEBUG   
             Console.WriteLine("Adding to list of connected clients");
 #endif
-            connected.Add(port, client);
+            Globals.connected.Add(port, client);
             client.ConnectedTo = port;
 #if DEBUG   
             Console.WriteLine("Starting to listen for messages from {0}", port);

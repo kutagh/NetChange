@@ -107,7 +107,8 @@ namespace NetChange {
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{4}{5}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
-            } // Send update
+                Globals.connected[neighbor.value].SendMessage(package);
+            }           // Sends update
         }
 
         public void InterpretMess(string package) {
@@ -117,7 +118,8 @@ namespace NetChange {
             if (senderNr != PortNumber)
             {
                 short nextStep = prefNeigh[senderNr];
-                //Forward message
+                Globals.connected[nextStep].SendMessage(package);
+                        // Forwards message
             }
             else
             {
@@ -195,8 +197,7 @@ namespace NetChange {
             {
                 UpdateNeighbors();
             }
-            // Update this node and neighbors
-        }
+        }   // Updates this node and it's neighbors
 
         public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, int targetNr)
         {
