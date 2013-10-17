@@ -121,6 +121,7 @@ namespace NetChange {
                 short nextStep = prefNeigh[senderNr];
                 Globals.connected[nextStep].SendMessage(package);
                         // Forwards message
+                return null;
             }
             else
             {
