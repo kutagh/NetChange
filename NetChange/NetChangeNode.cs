@@ -105,8 +105,8 @@ namespace NetChange {
                 builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
             }
             foreach (var neighbor in neighbors)
-            {   //a package with update info is a string starting with addressed portNumber and "DistList"
-                string package = string.Format("{0}{1}{2}{3}", neighbor.value.ToString(), entrySeparator, headerSeparator, builder.ToString());
+            {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
+                string package = string.Format("{0}{1}{2}{1}{4}{5}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
             } // Send update
         }
 
@@ -122,18 +122,19 @@ namespace NetChange {
             else
             {
                 if (unwrap[1] == headerSeparator)
+                {
+                    short sender = short.Parse(unwrap[2]);
+                    if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
+                    Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
                     for (int i = 2; i < unwrap.Length; i++)
                     {
                         string[] unpack = unwrap[i].Split(valueSeparator);
-                        if (distances.ContainsKey(short.Parse(unpack[0])))
-                        {
-                            //only update
-                        }
-                        else
-                        {
-                            //add elements and update
-                        }
+                        temp.Add(short.Parse(unpack[0]), int.Parse(unpack[1]));
                     }
+                    distances.Add(sender, temp);
+                    foreach (KeyValuePair<short, int> kvp in distances[sender])
+                        Update(kvp.Key);                                        //we also update the connections the sender knew of
+                }
             }
         }
 
