@@ -18,6 +18,7 @@ namespace NetChange {
         char entrySeparator = ';';
         char valueSeparator = ':';
         string headerSeparator = "DistList";
+        string messheadseparator = "TextMess";
 
         public Dictionary<short, Dictionary<short, int>> distances = new Dictionary<short, Dictionary<short, int>>();
             //list of known nodes and distances to the others from there
@@ -111,7 +112,7 @@ namespace NetChange {
             }           // Sends update
         }
 
-        public void InterpretMess(string package) {
+        public string InterpretMess(string package) {
             // convert package back to a distances[portNumber]
             string[] unwrap = package.Split(entrySeparator);
             short senderNr = short.Parse(unwrap[0]);
@@ -123,9 +124,9 @@ namespace NetChange {
             }
             else
             {
-                if (unwrap[1] == headerSeparator)
+                if (unwrap[2] == headerSeparator)
                 {
-                    short sender = short.Parse(unwrap[2]);
+                    short sender = short.Parse(unwrap[1]);
                     if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
                     Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
                     for (int i = 2; i < unwrap.Length; i++)
@@ -136,7 +137,13 @@ namespace NetChange {
                     distances.Add(sender, temp);
                     foreach (KeyValuePair<short, int> kvp in distances[sender])
                         Update(kvp.Key);                                        //we also update the connections the sender knew of
+                    return null;
                 }
+                else if (unwrap[2] == messheadseparator)
+                {
+                    return unwrap[3];
+                }
+                else throw new NotImplementedException();
             }
         }
 
