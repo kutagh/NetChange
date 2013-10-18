@@ -116,18 +116,20 @@ namespace NetChange {
             // convert package back to a distances[portNumber]
             string[] unwrap = package.Split(entrySeparator);
             short senderNr = short.Parse(unwrap[0]);
+            short sender = short.Parse(unwrap[1]);
+            if(Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
             if (senderNr != PortNumber)
             {
                 short nextStep = prefNeigh[senderNr];
                 Globals.connected[nextStep].SendMessage(package);
                         // Forwards message
+                if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", senderNr, prefNeigh);
                 return null;
             }
             else
             {
                 if (unwrap[2] == headerSeparator)
                 {
-                    short sender = short.Parse(unwrap[1]);
                     if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
                     Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
                     for (int i = 2; i < unwrap.Length; i++)

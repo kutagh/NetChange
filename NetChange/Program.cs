@@ -7,7 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
-    static class Globals { public static Dictionary<short, Client> connected; }
+    static class Globals {
+        public static Dictionary<short, Client> connected;
+        public static bool PrintStatusChanges = false;
+    }
 
     class NetwProg {
         static NetChangeNode node;
@@ -15,7 +18,6 @@ namespace NetChange {
         static Dictionary<short,Client> Oldconnected;
         static int SlowDown = 0;
         static long DistanceEstimatesSent = 0;
-        static bool PrintStatusChanges = false;
 
         static string parameterError = "The {0} parameter '{1}' was not correct, please enter {2}.";
 
@@ -110,6 +112,7 @@ namespace NetChange {
                         if (Globals.connected.ContainsKey(target)) {
                             node.RemoveNeighbor(target);
                             Globals.connected.Remove(target);
+                            if(Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
                         }
                         else
                             Console.WriteLine("Port {0} is not connected to this process", target);
@@ -122,6 +125,7 @@ namespace NetChange {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
                         node.AddNeighbor(target);
+                        if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", target);
                         continue;
                     }
                     Console.WriteLine(parameterError, "create", "port", "a valid port number");
@@ -143,9 +147,9 @@ namespace NetChange {
                 }
                 if (input.StartsWith("T")) {
                     if (input.Substring(2).Equals("on", StringComparison.CurrentCultureIgnoreCase))
-                        PrintStatusChanges = true;
+                        Globals.PrintStatusChanges = true;
                     else if (input.Substring(2).Equals("off", StringComparison.CurrentCultureIgnoreCase))
-                        PrintStatusChanges = false;
+                        Globals.PrintStatusChanges = false;
                     else
                         Console.WriteLine(parameterError, "toggle status changes", "status", "'on' or 'off'");
                     continue;
@@ -200,12 +204,9 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine(message);
 #endif
-            if (SlowDown > 0) {
+            if (SlowDown > 0) 
                 Thread.Sleep(SlowDown);
-                //var stopwatch = new Stopwatch();
-                //stopwatch.Start();
-                //while (stopwatch.ElapsedMilliseconds < SlowDown) { }
-            }
+                
             // Handle messages
             ListenForMessages(c);
         }
