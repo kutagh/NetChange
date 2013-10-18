@@ -77,6 +77,7 @@ namespace NetChange {
         public void AddNeighbor(NetChangeNode node) {
             base.AddNeighbor(node);
 
+            Console.WriteLine("Add {0} to {1} listed neighbors", node.value, PortNumber);
             Dictionary<short, int> temp = new Dictionary<short, int>();
             temp.Add(PortNumber, 1);
             distLock();
@@ -87,6 +88,14 @@ namespace NetChange {
             else
             {
                 distances.Add(node.value, temp);
+            }
+            if (distances[PortNumber].ContainsKey(node.value))
+            {
+                distances[PortNumber][node.value] = 1;
+            }
+            else
+            {
+                distances[PortNumber].Add(node.value, 1);
             }
             distUnlock();
             foreach (NetChangeNode n in neighbors)
@@ -218,7 +227,7 @@ namespace NetChange {
         /// </summary>
         public void Update(short portNumber) {  //recompute
 #if DEBUG
-            Console.WriteLine("recompute");
+            Console.WriteLine("recompute of {0} for {1}", PortNumber, portNumber);
 #endif
             bool hasChanged = false;
             if (portNumber == PortNumber)
@@ -236,6 +245,7 @@ namespace NetChange {
             }
             else if (Globals.ContainsKey(portNumber))
             {
+                Console.WriteLine("--rec {0} is neighbor", portNumber);
                 distLock();
                 if (distances[PortNumber].ContainsKey(portNumber))
                     distances[PortNumber][portNumber] = 1;
@@ -250,9 +260,10 @@ namespace NetChange {
             }
             else
             {
+                Console.WriteLine("--rec {0} isn't neigbor", portNumber);
                 bool dcontain = false;
                 distLock();
-                foreach (var kvp in distances)
+                foreach (var kvp in distances)  //is portNumber allready noted as a possible target from anywhere?
                 {
                     if (kvp.Value.ContainsKey(portNumber))
                     {
@@ -262,6 +273,7 @@ namespace NetChange {
                 }
                 if (dcontain)
                 {
+                    Console.WriteLine("--rec {0} known as possible target", portNumber);
                     KeyValuePair<short, int> d = minDist(distances, portNumber); //d = who to connect to to get given smallest distance
                     if (d.Value < int.MaxValue - 1)
                     {
