@@ -124,6 +124,7 @@ namespace NetChange {
                 if (input.StartsWith("C")) {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
+                        Globals.connected.Add(target, new Client(myPortNumber, target));
                         node.AddNeighbor(target);
                         if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", target);
                         continue;

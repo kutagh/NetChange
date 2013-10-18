@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
@@ -107,7 +108,8 @@ namespace NetChange {
             }
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
-                string package = string.Format("{0}{1}{2}{1}{4}{5}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
+                string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
+                while (!Globals.connected.Keys.Contains(neighbor.value)) Thread.Sleep(5);
                 Globals.connected[neighbor.value].SendMessage(package);
             }           // Sends update
         }
