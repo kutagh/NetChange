@@ -59,7 +59,9 @@ namespace NetChange {
 
             foreach (NetChangeNode n in neighbors)
             {
+#if DEBUG
                 Console.WriteLine("Recompute" + n.value.ToString());
+#endif
                 Update(n.value);
             }
         }
@@ -135,7 +137,9 @@ namespace NetChange {
             {
                 if (unwrap[2] == headerSeparator)
                 {
+#if DEBUG
                     Console.WriteLine("unwrapped DistList");
+#endif
                     if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
                     Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
                     for (int i = 2; i < unwrap.Length; i++)
@@ -169,7 +173,9 @@ namespace NetChange {
         /// Update this NetChange node
         /// </summary>
         public void Update(short portNumber) {  //recompute
+#if DEBUG
             Console.WriteLine("recompute");
+#endif
             bool hasChanged = false;
             if (portNumber == PortNumber)
             {
@@ -275,6 +281,7 @@ namespace NetChange {
         }
 
         internal void PrintRoutingTable() {
+
             Console.WriteLine("Routing table of {0}:", PortNumber);
             Console.WriteLine("to self ({0}): {1}", PortNumber, distances[PortNumber][PortNumber]);
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
