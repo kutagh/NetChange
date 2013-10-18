@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
@@ -13,6 +14,16 @@ namespace NetChange {
     class Node<T> {
         internal T value;
         internal List<Node<T>> neighbors;
+        SpinLock nbLocker = new SpinLock();
+
+        void nbLock() {
+            var temp = false;
+            nbLocker.Enter(ref temp);
+        }
+
+        void nbUnlock() {
+            nbLocker.Exit();
+        }
 
         /// <summary>
         /// Constructor for a node in a bidirectional graph
@@ -27,9 +38,11 @@ namespace NetChange {
         /// Adds a neighbor to the node
         /// </summary>
         /// <param name="node">neighbor to add to the graph</param>
-        public virtual void AddNeighbor(Node<T> node) {
+        public virtual void AddNeighbor(Node<T> node, bool sendToNB = true) {
+            nbLock();
             this.neighbors.Add(node);
-            node.neighbors.Add(this);
+            nbUnlock();
+            node.AddNeighbor(this, false);
         }
 
         /// <summary>
@@ -44,9 +57,11 @@ namespace NetChange {
         /// Remove a neighbor from the network
         /// </summary>
         /// <param name="node">neighbor to be removed</param>
-        public virtual void RemoveNeighbor(Node<T> node) {
+        public virtual void RemoveNeighbor(Node<T> node, bool sendToNB = true) {
+            nbLock();
             this.neighbors.Remove(node);
-            node.neighbors.Remove(this);
+            nbUnlock();
+            node.RemoveNeighbor(this, false);
         }
 
         /// <summary>
@@ -56,8 +71,8 @@ namespace NetChange {
         public virtual void RemoveNeighbor(T value) {
             var toRemove = FindNeighbor(value);
             if (toRemove == null) return; // Safety check so we don't remove a neighbor that isn't a neighbor
-            this.neighbors.Remove(toRemove);
-            toRemove.neighbors.Remove(this);
+            RemoveNeighbor(toRemove);
+            toRemove.RemoveNeighbor(this, false);
         }
 
         /// <summary>
@@ -66,10 +81,13 @@ namespace NetChange {
         /// <param name="value">Value of neighbor</param>
         /// <returns>neighbor node if it exists, null if it isn't a neighbor</returns>
         public virtual Node<T> FindNeighbor(T value) {
+            nbLock();
             foreach (var neighbor in neighbors)
-                if (neighbor.value.Equals(value))
+                if (neighbor.value.Equals(value)) {
+                    nbUnlock();
                     return neighbor;
-            
+                }
+            nbUnlock();
             return null;
         }
     }
