@@ -58,7 +58,10 @@ namespace NetChange {
             }
 
             foreach (NetChangeNode n in neighbors)
+            {
+                Console.WriteLine("Recompute" + n.value.ToString());
                 Update(n.value);
+            }
         }
 
         /// <summary>
@@ -119,7 +122,7 @@ namespace NetChange {
             string[] unwrap = package.Split(entrySeparator);
             short senderNr = short.Parse(unwrap[0]);
             short sender = short.Parse(unwrap[1]);
-            if(Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
+            if (Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
             if (senderNr != PortNumber)
             {
                 short nextStep = prefNeigh[senderNr];
@@ -132,6 +135,7 @@ namespace NetChange {
             {
                 if (unwrap[2] == headerSeparator)
                 {
+                    Console.WriteLine("unwrapped DistList");
                     if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
                     Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
                     for (int i = 2; i < unwrap.Length; i++)
@@ -164,7 +168,8 @@ namespace NetChange {
         /// <summary>
         /// Update this NetChange node
         /// </summary>
-        public void Update(short portNumber) {
+        public void Update(short portNumber) {  //recompute
+            Console.WriteLine("recompute");
             bool hasChanged = false;
             if (portNumber == PortNumber)
             {
@@ -172,37 +177,76 @@ namespace NetChange {
                 temp[portNumber] = 0;
                 if (prefNeigh.ContainsKey(portNumber))
                     prefNeigh[portNumber] = portNumber;
-                else
-                    prefNeigh.Add(portNumber, portNumber);
+                else prefNeigh.Add(portNumber, portNumber);
+                hasChanged = true;
+            }
+            else if (Globals.connected.ContainsKey(portNumber))
+            {
+                if (distances[PortNumber].ContainsKey(portNumber))
+                    distances[PortNumber][portNumber] = 1;
+                else distances[PortNumber].Add(portNumber, 1);
+                if (prefNeigh.ContainsKey(portNumber))
+                    prefNeigh[portNumber] = portNumber;
+                else prefNeigh.Add(portNumber, portNumber);
+                hasChanged = true;
             }
             else
             {
-                KeyValuePair<short, int> d = minDist(distances, portNumber); //d = who to connect to to get given smallest distance
-                if (d.Value + 1 < int.MaxValue)
+                bool dcontain = false;
+                foreach (var kvp in distances)
                 {
-                    int PRVd = -1;
-                    if (distances[PortNumber].ContainsKey(portNumber))
+                    if (kvp.Value.ContainsKey(portNumber))
                     {
-                        PRVd = distances[PortNumber][portNumber];
-                        distances[PortNumber][portNumber] = d.Value + 1;
+                        dcontain = true;
+                        break;
                     }
-                    else distances[PortNumber].Add(portNumber, d.Value + 1);
-
-                    short PRVk = -1;
-                    if (prefNeigh.ContainsKey(portNumber))
+                }
+                if (dcontain)
+                {
+                    KeyValuePair<short, int> d = minDist(distances, portNumber); //d = who to connect to to get given smallest distance
+                    if (d.Value < int.MaxValue - 1)
                     {
-                        PRVk = prefNeigh[portNumber];
-                        prefNeigh[portNumber] = d.Key;
-                    }
-                    else prefNeigh.Add(portNumber, d.Key);
+                        int PRVd = -1;
+                        if (distances[PortNumber].ContainsKey(portNumber))
+                        {
+                            PRVd = distances[PortNumber][portNumber];
+                            distances[PortNumber][portNumber] = d.Value + 1;
+                        }
+                        else distances[PortNumber].Add(portNumber, d.Value + 1);
 
-                    if ((PRVd != d.Value + 1) || (PRVk != d.Key))
+                        short PRVk = -1;
+                        if (prefNeigh.ContainsKey(portNumber))
+                        {
+                            PRVk = prefNeigh[portNumber];
+                            prefNeigh[portNumber] = d.Key;
+                        }
+                        else prefNeigh.Add(portNumber, d.Key);
+
+                        if ((PRVd != d.Value + 1) || (PRVk != d.Key))
+                            hasChanged = true;
+                    }
+                    else
+                    {
+                        PrintRoutingTable();
+                        Thread.Sleep(1000);
+                        //RemoveNeighbor(portNumber);
                         hasChanged = true;
+                    }
                 }
                 else
                 {
-                    RemoveNeighbor(portNumber);
-                    hasChanged = true;
+                    if (Globals.connected.ContainsKey(portNumber))
+                    {
+                        distances[PortNumber].Add(portNumber, 1);
+                        prefNeigh[portNumber] = portNumber;
+                        hasChanged = true;
+                    }
+                    else
+                    {
+                        distances[PortNumber].Add(portNumber, int.MaxValue);
+                        Update(portNumber);
+                        hasChanged = true;
+                    }
                 }
             }
             if (hasChanged)
@@ -211,8 +255,10 @@ namespace NetChange {
             }
         }   // Updates this node and it's neighbors
 
-        public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, int targetNr)
+        public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, short targetNr)
         {
+            if (Globals.connected.ContainsKey(targetNr))
+                return new KeyValuePair<short, int>(targetNr, 0);
             KeyValuePair<short, int> result = new KeyValuePair<short, int>(-1, int.MaxValue);
             foreach (KeyValuePair<short, Dictionary<short, int>> node1 in dic1)
                 if (FindNeighbor(node1.Key) != null)
@@ -234,7 +280,8 @@ namespace NetChange {
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
                 if (kvp.Key != PortNumber)
-                    Console.WriteLine("to port {0} via {1}: {2}", kvp.Key, prefNeigh[kvp.Key], kvp.Value);
+                    Console.WriteLine("to port {0} via {1}: {2}", kvp.Key, //prefNeigh[kvp.Key], 
+                        10, kvp.Value);
             }
         }
     }
