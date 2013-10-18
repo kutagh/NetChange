@@ -32,6 +32,9 @@ namespace NetChange {
         static string parameterError = "The {0} parameter '{1}' was not correct, please enter {2}.";
 
         static void Main(string[] args) {
+#if DEBUG
+            Console.WriteLine("Debugging mode");
+#endif
             if (args.Length == 0) {
                 args = new string[] { "1000", "1001" };
             }
@@ -76,6 +79,10 @@ namespace NetChange {
                         Console.WriteLine("Failed to connect, retrying for {0}th time", attempt++);
 #endif
                         System.Threading.Thread.Sleep(3);
+                        if (++attempt > 1000) {
+                            Console.WriteLine("Did not manage to connect, aborting");
+                            retry = false;
+                        }
                     }
                 }
             }
@@ -215,11 +222,7 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
 #endif
-#if DEBUG
-            var debug = true;
-#else
-            var debug = false;
-#endif
+
             var message = c.ReadMessage();
 #if DEBUG
             Console.WriteLine(message);
