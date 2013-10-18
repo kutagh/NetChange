@@ -114,8 +114,9 @@ namespace NetChange {
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
-                while (!Globals.connected.Keys.Contains(neighbor.value)) Thread.Sleep(5);
-                Globals.connected[neighbor.value].SendMessage(package);
+                Globals.Lock();
+                while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); }
+                Globals.Get(neighbor.value).SendMessage(package);
             }           // Sends update
         }
 
@@ -128,7 +129,7 @@ namespace NetChange {
             if (senderNr != PortNumber)
             {
                 short nextStep = prefNeigh[senderNr];
-                Globals.connected[nextStep].SendMessage(package);
+                Globals.Get(nextStep).SendMessage(package);
                         // Forwards message
                 if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", senderNr, prefNeigh);
                 return null;
@@ -186,7 +187,7 @@ namespace NetChange {
                 else prefNeigh.Add(portNumber, portNumber);
                 hasChanged = true;
             }
-            else if (Globals.connected.ContainsKey(portNumber))
+            else if (Globals.ContainsKey(portNumber))
             {
                 if (distances[PortNumber].ContainsKey(portNumber))
                     distances[PortNumber][portNumber] = 1;
@@ -241,7 +242,7 @@ namespace NetChange {
                 }
                 else
                 {
-                    if (Globals.connected.ContainsKey(portNumber))
+                    if (Globals.ContainsKey(portNumber))
                     {
                         distances[PortNumber].Add(portNumber, 1);
                         prefNeigh[portNumber] = portNumber;
@@ -263,7 +264,7 @@ namespace NetChange {
 
         public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, short targetNr)
         {
-            if (Globals.connected.ContainsKey(targetNr))
+            if (Globals.ContainsKey(targetNr))
                 return new KeyValuePair<short, int>(targetNr, 0);
             KeyValuePair<short, int> result = new KeyValuePair<short, int>(-1, int.MaxValue);
             foreach (KeyValuePair<short, Dictionary<short, int>> node1 in dic1)

@@ -9,8 +9,63 @@ using System.Threading.Tasks;
 
 namespace NetChange {
     static class Globals {
-        public static Dictionary<short, Client> connected;
+        private static Dictionary<short, Client> connected = new Dictionary<short, Client>();
         public static bool PrintStatusChanges = false;
+
+        private static SpinLock locker = new SpinLock();
+        public static void Add(short p, Client c) {
+            Lock();
+            connected.Add(p, c);
+            Unlock();
+        }
+
+        public static void Lock() {
+            var temp = false;
+            locker.Enter(ref temp);
+        }
+
+        public static void Unlock() {
+            locker.Exit();
+        }
+
+        public static void Remove(short p) {
+            Lock();
+            connected.Remove(p);
+            Unlock();
+        }
+
+        public static Client Get(short p) {
+            Lock();
+            Client result = connected.ContainsKey(p) ? connected[p] : null;
+            Unlock();
+            return result;
+        }
+
+        public static void Set(short p, Client c) {
+            Lock();
+            if (connected.ContainsKey(p))
+                connected[p] = c;
+            else
+                connected.Add(p, c);
+            Unlock();
+        }
+
+        public static bool ContainsKey(short p) {
+            Lock();
+            var result = connected.ContainsKey(p);
+            Unlock();
+            return result;
+        }
+
+        /// <summary>
+        /// Only call if you actually have a lock
+        /// </summary>
+        /// <returns>Null if no lock was acquired prior to the method being called, the clients dictionary if the lock was acquired</returns>
+        public static Dictionary<short, Client> GetDictionary() {
+            if (locker.IsHeldByCurrentThread)
+                return connected;
+            return null;
+        }
     }
 
     class NetwProg {
@@ -54,7 +109,6 @@ namespace NetChange {
             while (++iterator < args.Length) // All neighbors
                 list.Add(short.Parse(args[iterator]));
 
-            Globals.connected = new Dictionary<short, Client>();
             server = new Server(myPortNumber);
             // Create listener
             Thread th = new Thread(new ThreadStart(Listen));
@@ -68,7 +122,7 @@ namespace NetChange {
                 while (retry) {
                     try {
                         var client = new Client(myPortNumber, port);
-                        Globals.connected.Add(port, client);
+                        Globals.Add(port, client);
                         retry = false;
 #if DEBUG
                         Console.WriteLine(client.CreateHandshake(myPortNumber));
@@ -90,7 +144,8 @@ namespace NetChange {
             // Set up local graph
             node = new NetChangeNode(myPortNumber);
             foreach (var port in list) node.AddNeighbor(port);
-            foreach (var client in Globals.connected) {
+            Globals.Lock();
+            foreach (var client in Globals.GetDictionary()) {
 #if DEBUG
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
 #endif
@@ -99,6 +154,7 @@ namespace NetChange {
                 listener.Start();
                 //Task.Factory.StartNew(() => ListenForMessages(c));
             }
+            Globals.Unlock();
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 #if DEBUG
             foreach (var client in Globals.connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
@@ -126,13 +182,15 @@ namespace NetChange {
                 if (input.StartsWith("D")) {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
-                        if (Globals.connected.ContainsKey(target)) {
+                        Globals.Lock();
+                        if (Globals.GetDictionary().ContainsKey(target)) {
                             node.RemoveNeighbor(target);
-                            Globals.connected.Remove(target);
+                            Globals.GetDictionary().Remove(target);
                             if(Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
                         }
                         else
                             Console.WriteLine("Port {0} is not connected to this process", target);
+                        Globals.Unlock();
                         continue;
                     }
                     Console.WriteLine(parameterError, "delete", "port", "a valid port number");
@@ -141,7 +199,7 @@ namespace NetChange {
                 if (input.StartsWith("C")) {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
-                        Globals.connected.Add(target, new Client(myPortNumber, target));
+                        Globals.Add(target, new Client(myPortNumber, target));
                         node.AddNeighbor(target);
                         if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", target);
                         continue;
@@ -155,7 +213,7 @@ namespace NetChange {
                         var message = new StringBuilder(string.Format("Broadcast: {0}", split[2]));
                         for (int i = 3; i < split.Length; i++)
                             message.AppendFormat(" {0}", split[i]);
-                        Globals.connected[target].SendMessage(message.ToString());
+                        Globals.Get(target).SendMessage(message.ToString());
                         continue;
                     }
                     if (split.Length > 2)
@@ -202,7 +260,7 @@ namespace NetChange {
 #if DEBUG   
             Console.WriteLine("Adding to list of connected clients");
 #endif
-                Globals.connected.Add(port, client);
+                Globals.Add(port, client);
                 client.ConnectedTo = port;
 #if DEBUG   
             Console.WriteLine("Starting to listen for messages from {0}", port);
