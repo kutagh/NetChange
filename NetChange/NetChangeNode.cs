@@ -229,7 +229,6 @@ namespace NetChange {
         }
 
         internal void PrintRoutingTable() {
-            //throw new NotImplementedException();
             Console.WriteLine("Routing table of {0}:", PortNumber);
             Console.WriteLine("to self ({0}): {1}", PortNumber, distances[PortNumber][PortNumber]);
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])

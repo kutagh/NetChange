@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,15 @@ namespace NetChange {
     }
 
     class NetwProg {
+        const int SWP_NOSIZE = 0x0001; //Ignores the resize parameters when calling SetWindowPos.
+        [DllImport("kernel32.dll", ExactSpelling = true)]
+        private static extern IntPtr GetConsoleWindow();
+
+        private static IntPtr MyConsole = GetConsoleWindow();
+
+        [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
+        public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+        
         static NetChangeNode node;
         static Server server;
         static Dictionary<short,Client> Oldconnected;
@@ -28,7 +38,8 @@ namespace NetChange {
             int iterator = 0;
             if (args[0][0] == 'p') {
                 // Set console position
-                Console.SetWindowPosition(int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)));
+                //Console.SetWindowPosition(int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)));
+                SetWindowPos(MyConsole, 0, int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)), 0, 0, SWP_NOSIZE);
                 iterator += 2;
                 Console.Title = string.Format("port = {0}, x = {1}, y = {2}", args[iterator], args[0].Substring(1), args[1].Substring(1)); // Port number
             }
@@ -72,7 +83,6 @@ namespace NetChange {
             // Set up local graph
             node = new NetChangeNode(myPortNumber);
             foreach (var port in list) node.AddNeighbor(port);
-            node.Updating = true;
             foreach (var client in Globals.connected) {
 #if DEBUG
                 Console.WriteLine("Have{0} connected to {1}", client.Value.IsConnected ? "" : "n't", client.Key);
@@ -134,17 +144,18 @@ namespace NetChange {
                 if (input.StartsWith("B")) {
                     var split = input.Split(' ');
                     short target;
-                    if (split.Length > 1 && short.TryParse(input.Substring(2), out target)) {
-                        var message = new StringBuilder();
-                        for (int i = 2; i < split.Length; i++)
+                    if (split.Length > 2 && short.TryParse(split[1], out target)) {
+                        var message = new StringBuilder(string.Format("Broadcast: {0}", split[2]));
+                        for (int i = 3; i < split.Length; i++)
                             message.AppendFormat(" {0}", split[i]);
                         Globals.connected[target].SendMessage(message.ToString());
                         continue;
                     }
-                    if (split.Length > 1)
+                    if (split.Length > 2)
                         Console.WriteLine(parameterError, "broadcast", "port", "a valid port number");
                     else
                         Console.WriteLine(parameterError, "broadcast", "message", "a valid message");
+                    continue;
                 }
                 if (input.StartsWith("T")) {
                     if (input.Substring(2).Equals("on", StringComparison.CurrentCultureIgnoreCase))
@@ -179,31 +190,44 @@ namespace NetChange {
             Console.WriteLine("Handshake message: " + handShake);
 #endif
             var port = client.ParseHandshake(handShake);
+            if (port < 0) { Console.WriteLine("Didn't get a valid handshake. Handshake message: '{0}'", handShake); Listen(); }
+            else {
 #if DEBUG   
             Console.WriteLine("Adding to list of connected clients");
 #endif
-            Globals.connected.Add(port, client);
-            client.ConnectedTo = port;
+                Globals.connected.Add(port, client);
+                client.ConnectedTo = port;
 #if DEBUG   
             Console.WriteLine("Starting to listen for messages from {0}", port);
 #endif
-            Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
-            listener.Start();
-            
-            //Task.Factory.StartNew(() => ListenForMessages(client));
+                Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
+                listener.Start();
+
+                //Task.Factory.StartNew(() => ListenForMessages(client));
 #if DEBUG
             Console.WriteLine("Accepted connection");
 #endif
-            Listen();
+                Listen();
+            }
         }
 
         static void ListenForMessages(Client c) {
 #if DEBUG
             Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
 #endif
+#if DEBUG
+            var debug = true;
+#else
+            var debug = false;
+#endif
             var message = c.ReadMessage();
 #if DEBUG
             Console.WriteLine(message);
+#else
+            if (message.StartsWith("Broadcast: ")) {
+                message = message.Substring("Broadcast: ".Length);
+                Console.WriteLine(message);
+            }
 #endif
             if (SlowDown > 0) 
                 Thread.Sleep(SlowDown);
