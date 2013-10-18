@@ -12,7 +12,7 @@ namespace NetChange {
         private static Dictionary<short, Client> connected = new Dictionary<short, Client>();
         public static bool PrintStatusChanges = false;
 
-        private static SpinLock locker = new SpinLock();
+        private static SpinLock connectedLocker = new SpinLock();
         public static void Add(short p, Client c) {
             Lock();
             connected.Add(p, c);
@@ -20,12 +20,14 @@ namespace NetChange {
         }
 
         public static void Lock() {
+            if (connectedLocker.IsHeldByCurrentThread) return;
             var temp = false;
-            locker.Enter(ref temp);
+            while (!temp)
+                connectedLocker.Enter(ref temp);
         }
 
         public static void Unlock() {
-            locker.Exit();
+            connectedLocker.Exit();
         }
 
         public static void Remove(short p) {
@@ -62,7 +64,7 @@ namespace NetChange {
         /// </summary>
         /// <returns>Null if no lock was acquired prior to the method being called, the clients dictionary if the lock was acquired</returns>
         public static Dictionary<short, Client> GetDictionary() {
-            if (locker.IsHeldByCurrentThread)
+            if (connectedLocker.IsHeldByCurrentThread)
                 return connected;
             return null;
         }
@@ -157,7 +159,9 @@ namespace NetChange {
             Globals.Unlock();
             //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 #if DEBUG
-            foreach (var client in Globals.connected) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
+            Globals.Lock();
+            foreach (var client in Globals.GetDictionary()) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
+            Globals.Unlock();
             Console.ReadLine();
 #endif
             while (true) {

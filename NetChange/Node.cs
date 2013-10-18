@@ -17,8 +17,10 @@ namespace NetChange {
         SpinLock nbLocker = new SpinLock();
 
         void nbLock() {
+            if (nbLocker.IsHeldByCurrentThread) return;
             var temp = false;
-            nbLocker.Enter(ref temp);
+            while (!temp)
+                nbLocker.Enter(ref temp);
         }
 
         void nbUnlock() {
@@ -42,7 +44,8 @@ namespace NetChange {
             nbLock();
             this.neighbors.Add(node);
             nbUnlock();
-            node.AddNeighbor(this, false);
+            if (sendToNB)
+                node.AddNeighbor(this, false);
         }
 
         /// <summary>
@@ -61,7 +64,8 @@ namespace NetChange {
             nbLock();
             this.neighbors.Remove(node);
             nbUnlock();
-            node.RemoveNeighbor(this, false);
+            if (sendToNB)
+                node.RemoveNeighbor(this, false);
         }
 
         /// <summary>

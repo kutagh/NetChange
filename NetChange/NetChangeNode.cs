@@ -29,12 +29,16 @@ namespace NetChange {
         SpinLock distLocker = new SpinLock(), prefLocker = new SpinLock();
 
         void distLock() {
+            if (distLocker.IsHeldByCurrentThread) return;
             var temp = false;
-            distLocker.Enter(ref temp);
+            while (!temp)
+                distLocker.Enter(ref temp);
         }
         void prefLock() {
+            if (prefLocker.IsHeldByCurrentThread) return;
             var temp = false;
-            prefLocker.Enter(ref temp);
+            while (!temp)
+                prefLocker.Enter(ref temp);
         }
         void rtLock() {
             distLock();
@@ -148,7 +152,7 @@ namespace NetChange {
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
                 Globals.Lock();
-                while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); }
+                while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); Globals.Lock(); }
                 Globals.Get(neighbor.value).SendMessage(package);
             }           // Sends update
         }
@@ -283,6 +287,7 @@ namespace NetChange {
                     }
                     else
                     {
+                        distUnlock();
                         PrintRoutingTable();
                         Thread.Sleep(1000);
                         //RemoveNeighbor(portNumber);
