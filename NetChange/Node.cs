@@ -82,13 +82,9 @@ namespace NetChange {
         /// <returns>neighbor node if it exists, null if it isn't a neighbor</returns>
         public virtual Node<T> FindNeighbor(T value) {
             nbLock();
-            foreach (var neighbor in neighbors)
-                if (neighbor.value.Equals(value)) {
-                    nbUnlock();
-                    return neighbor;
-                }
+            var result = neighbors.FirstOrDefault(x => x.value.Equals(value));
             nbUnlock();
-            return null;
+            return result;
         }
     }
 }
