@@ -143,10 +143,10 @@ namespace NetChange {
             nbLock();
             foreach (var node in neighbors)
                 Update(node.value);
+            nbUnlock();
             foreach (var kvp in recomList)
                 Update(kvp.Key);
             Update(portNumber);
-            nbUnlock();
         }
 
         /// <summary>
