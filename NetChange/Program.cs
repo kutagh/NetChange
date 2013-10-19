@@ -11,18 +11,18 @@ using System.Threading.Tasks;
 namespace NetChange {
     internal static class Globals {
         private static Dictionary<short, Client> connected = new Dictionary<short, Client>();
-        public static long DistanceEstimatesSent { get; private set; }
+        public static long TotalDistanceEstimatesSent { get; private set; }
         public static bool PrintStatusChanges = false;
 
         private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock(), distEstLocker = new ImprovedSpinlock();
         
         static Globals() {
-            DistanceEstimatesSent = 0;
+            TotalDistanceEstimatesSent = 0;
         }
 
-        public static void IncrementDistanceEstimatesSent(int n = 1) {
+        public static void IncrementTotalDistanceEstimatesSent(int n = 1) {
             distEstLocker.Lock();
-            DistanceEstimatesSent += n;
+            TotalDistanceEstimatesSent += n;
             distEstLocker.Unlock();
         }
 
@@ -200,7 +200,7 @@ namespace NetChange {
                     continue;
                 }
                 if (input.StartsWith("M")) {
-                    Console.WriteLine("Total number of distance estimations sent: {0}", Globals.DistanceEstimatesSent);
+                    Console.WriteLine("Total number of distance estimations sent: {0}", Globals.TotalDistanceEstimatesSent);
                     continue;
                 }
                 if (input.StartsWith("D")) {

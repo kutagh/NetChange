@@ -154,16 +154,18 @@ namespace NetChange {
                 builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
             }
             distUnlock(); nbLock();
+            int distanceEstimatesSent = 0;
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
                 Globals.Lock();
                 while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); Globals.Lock(); }
                 Globals.Get(neighbor.value).SendMessage(package);
-                Globals.IncrementDistanceEstimatesSent();
                 Globals.Unlock();
+                distanceEstimatesSent++;
             }           // Sends update
             nbUnlock();
+            Globals.IncrementTotalDistanceEstimatesSent(distanceEstimatesSent);
         }
 
         public string InterpretMess(string package) {
