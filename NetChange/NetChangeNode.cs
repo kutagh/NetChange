@@ -92,6 +92,7 @@ namespace NetChange {
                 distances[PortNumber].Add(node.value, int.MaxValue);
             }
             distUnlock();
+            if (!Updating) return;
             nbLock();
             foreach (NetChangeNode n in neighbors)
             {
@@ -233,6 +234,14 @@ namespace NetChange {
         /// <returns>NetChangeNode if it is a neighbor, null if it isn't</returns>
         public new NetChangeNode FindNeighbor(short portNumber) {
             return base.FindNeighbor(portNumber) as NetChangeNode;
+        }
+
+        public void Update() {
+            nbLock();
+            foreach (var node in neighbors) {
+                Update(node.value);
+            }
+            nbUnlock();
         }
 
         /// <summary>

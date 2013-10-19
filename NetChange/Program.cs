@@ -132,6 +132,10 @@ namespace NetChange {
             while (++iterator < args.Length) // All neighbors
                 list.Add(short.Parse(args[iterator]));
 
+            // Set up local graph
+            node = new NetChangeNode(myPortNumber);
+            foreach (var port in list) node.AddNeighbor(port);
+            
             server = new Server(myPortNumber);
             // Create listener
             Thread th = new Thread(new ThreadStart(Listen));
@@ -163,9 +167,6 @@ namespace NetChange {
                 }
             }
             
-            // Set up local graph
-            node = new NetChangeNode(myPortNumber);
-            foreach (var port in list) node.AddNeighbor(port);
             Globals.Lock();
             foreach (var client in Globals.GetDictionary()) {
 #if DEBUG
@@ -177,6 +178,8 @@ namespace NetChange {
                 //Task.Factory.StartNew(() => ListenForMessages(c));
             }
             Globals.Unlock();
+            node.Updating = true;
+            node.Update();
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 #if DEBUG
             Globals.Lock();
