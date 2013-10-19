@@ -327,7 +327,7 @@ namespace NetChange {
                 Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
                 listener.Start();
 
-                //Task.Factory.StartNew(() => ListenForMessages(client));
+                node.AddNeighbor(port);
 #if DEBUG
             Console.WriteLine("Accepted connection");
 #endif
