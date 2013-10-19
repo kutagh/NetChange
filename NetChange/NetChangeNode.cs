@@ -130,10 +130,7 @@ namespace NetChange {
                 return;
             base.RemoveNeighbor(portNumber);
             distLock();
-            //foreach (KeyValuePair<short,Dictionary<short, int>> dic1 in distances)
-            //{   //remove all instances of connections with portNumber in distances
-            //    dic1.Value.Remove(portNumber);
-            //}
+            distances[PortNumber].Remove(portNumber);
             distances.Remove(portNumber);
             distUnlock(); prefLock();
             foreach (KeyValuePair<short, short> pref in prefNeigh.Where(kvp => kvp.Value == portNumber).ToList())
@@ -319,6 +316,7 @@ namespace NetChange {
                 {
                     if (kvp.Value.ContainsKey(portNumber))
                     {
+                        Console.WriteLine("--rec targeted? {0}, {1}", kvp.Key, kvp.Value[kvp.Key]);
                         dcontain = true;
                         break;
                     }
