@@ -246,6 +246,8 @@ namespace NetChange {
                     if (short.TryParse(input.Substring(2), out port)) {
                         var client = new Client(myPortNumber, port);
                         Globals.Add(port, client);
+                        Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
+                        listener.Start();
                         node.AddNeighbor(port);
                         if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", port);
                         continue;
