@@ -26,27 +26,23 @@ namespace NetChange {
         public Dictionary<short, short> prefNeigh = new Dictionary<short, short>(); 
             //to whom to send messages when it has to go to some node
 
-        SpinLock distLocker = new SpinLock(), prefLocker = new SpinLock();
+        ImprovedSpinlock distLocker = new ImprovedSpinlock(), prefLocker = new ImprovedSpinlock();
 
         void distLock() {
-            var temp = false;
-            while (!temp)
-                distLocker.Enter(ref temp);
+            distLocker.Lock();
         }
         void prefLock() {
-            var temp = false;
-            while (!temp)
-                prefLocker.Enter(ref temp);
+            prefLocker.Lock();
         }
         void rtLock() {
             distLock();
             prefLock();
         }
         void distUnlock() {
-            distLocker.Exit();
+            distLocker.Unlock();
         }
         void prefUnlock() {
-            prefLocker.Exit();
+            prefLocker.Unlock();
         }
         void rtUnlock() {
             distUnlock();

@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Connection.cs" />
+    <Compile Include="ImprovedSpinlock.cs" />
     <Compile Include="NetChangeNode.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Program.cs" />

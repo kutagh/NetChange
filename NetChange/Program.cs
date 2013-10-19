@@ -13,7 +13,7 @@ namespace NetChange {
         private static Dictionary<short, Client> connected = new Dictionary<short, Client>();
         public static bool PrintStatusChanges = false;
 
-        private static SpinLock connectedLocker = new SpinLock();
+        private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock();
         public static void Add(short p, Client c) {
             Lock();
             connected.Add(p, c);
@@ -21,13 +21,11 @@ namespace NetChange {
         }
 
         public static void Lock() {
-            var temp = false;
-            while (!temp)
-                connectedLocker.Enter(ref temp);
+            connectedLocker.Lock();
         }
 
         public static void Unlock() {
-            connectedLocker.Exit();
+            connectedLocker.Unlock();
         }
 
         public static void Remove(short p) {
@@ -64,7 +62,7 @@ namespace NetChange {
         /// </summary>
         /// <returns>Null if no lock was acquired prior to the method being called, the clients dictionary if the lock was acquired</returns>
         public static Dictionary<short, Client> GetDictionary() {
-            if (connectedLocker.IsHeldByCurrentThread)
+            if (connectedLocker.locker.IsHeldByCurrentThread)
                 return connected;
             return null;
         }
