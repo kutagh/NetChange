@@ -70,8 +70,9 @@ namespace NetChange {
         /// <param name="node">NetChange node to add</param>
         public void AddNeighbor(NetChangeNode node) {
             base.AddNeighbor(node);
-
+#if DEBUG
             Console.WriteLine("Add {0} to {1} listed neighbors", node.value, PortNumber);
+#endif
             Dictionary<short, int> temp = new Dictionary<short, int>();
             temp.Add(PortNumber, int.MaxValue);
             distLock();
@@ -203,12 +204,16 @@ namespace NetChange {
                         distLock();
                         if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
                         Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
+#if DEBUG
                         Console.WriteLine(unwrap.Length.ToString());
+#endif
                         for (int i = 3; i < unwrap.Length; i++)
                         {
                             string[] unpack = unwrap[i].Split(valueSeparator);
                             temp.Add(short.Parse(unpack[0]), int.Parse(unpack[1]));
+#if DEBUG
                             Console.WriteLine("--unwrap of {0}; {1}, {2}", PortNumber, unpack[0], unpack[1]);
+#endif
                         }
                         distances.Add(sender, temp);
                         distUnlock();
@@ -254,7 +259,9 @@ namespace NetChange {
             bool hasChanged = false;
             if (portNumber == PortNumber)
             {
+#if DEBUG
                 Console.WriteLine("--rec self");
+#endif
                 distLock();
                 if (distances.ContainsKey(portNumber))
                     if (distances[portNumber].ContainsKey(portNumber))
@@ -276,7 +283,9 @@ namespace NetChange {
             }
             else if (FindNeighbor(portNumber) != null)
             {
+#if DEBUG
                 Console.WriteLine("--rec {0} is neighbor", portNumber);
+#endif
                 distLock();
                 if (distances[PortNumber].ContainsKey(portNumber))
                 {
@@ -301,7 +310,9 @@ namespace NetChange {
             }
             else
             {
+#if DEBUG
                 Console.WriteLine("--rec {0} isn't neigbor", portNumber);
+#endif
                 bool dcontain = false;
                 distLock();
                 foreach (var kvp in distances)  //is portNumber allready noted as a possible target from anywhere?
@@ -315,7 +326,9 @@ namespace NetChange {
 
                 if (dcontain)
                 {
+#if DEBUG
                     Console.WriteLine("--rec {0} known as possible target", portNumber);
+#endif
                     KeyValuePair<short, int> d = minDist(distances, portNumber); //d = who to connect to to get given smallest distance
                     if (d.Value < int.MaxValue - 1)
                     {
@@ -343,7 +356,9 @@ namespace NetChange {
                     {
                         if (d.Key > -1)
                         {
+#if DEBUG
                             Console.WriteLine("--rec {0} unreachable", portNumber);
+#endif
                             RemoveNeighbor(portNumber);
                             distUnlock();
                             hasChanged = true;
@@ -351,7 +366,9 @@ namespace NetChange {
                         else
                         {
                             distUnlock();
+#if DEBUG
                             Console.WriteLine("--rec No MinDist");
+#endif
                             hasChanged = true;
                         }
                     }
@@ -383,7 +400,9 @@ namespace NetChange {
 
         public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, short targetNr)
         {
+#if DEBUG
             Console.WriteLine("--minDist by {0}: target {1}", PortNumber, targetNr);
+#endif
             if (Globals.ContainsKey(targetNr))
                 return new KeyValuePair<short, int>(targetNr, 0);
             KeyValuePair<short, int> result = new KeyValuePair<short, int>(-1, int.MaxValue);
@@ -392,20 +411,20 @@ namespace NetChange {
                 {   //if the first of the connection tuples is a neighbor
                     foreach (KeyValuePair<short, int> node2 in node1.Value)
                     {   //get the distance to the target
+#if DEBUG
                         Console.WriteLine("-minD {0}, {1}, {2}", node1.Key, node2.Key, node2.Value);
+#endif
                         if (node2.Key == targetNr && node2.Value < result.Value)
-                        {
-                            Console.WriteLine("-minD new result");
                             result = new KeyValuePair<short, int>(node1.Key, node2.Value);
-                        } 
                     }
                 }
+#if DEBUG
             Console.WriteLine("--minDist output: {0}, {1}", result.Key, result.Value);
+#endif
             return result; //return the smallest
         }
 
         internal void PrintRoutingTable() {
-
             Console.WriteLine("Routing table of {0}:", PortNumber);
             distLock(); prefLock();
             Console.WriteLine("to self ({0}): {1}", PortNumber, distances[PortNumber][PortNumber]);

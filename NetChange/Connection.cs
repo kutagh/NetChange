@@ -94,10 +94,14 @@ namespace NetChange {
         /// </summary>
         /// <param name="portNumber">Port number to listen on</param>
         public Server(short portNumber) {
+#if DEBUG
             Console.WriteLine("Attempt to claim port {0} for server usage.", portNumber);
+#endif
             server = new TcpListener(IPAddress.Any, portNumber);
             server.Start();
+#if DEBUG
             Console.WriteLine("serverport claimed");
+#endif
         }
 
         /// <summary>
