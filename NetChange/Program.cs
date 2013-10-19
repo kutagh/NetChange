@@ -209,16 +209,16 @@ namespace NetChange {
                         Globals.Lock();
                         if (Globals.GetDictionary().ContainsKey(target))
                         {
-                            Globals.Unlock();
                             Globals.Get(target).SendMessage(Globals.CreatePackage("Delete", target, myPortNumber.ToString()));
                             Globals.Remove(target);
+                            Globals.Unlock();
                             node.RemoveNeighbor(target);
                             if (Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
                         }
                         else
                         {
-                            Console.WriteLine("Port {0} is not connected to this process", target);
                             Globals.Unlock();
+                            Console.WriteLine("Port {0} is not connected to this process", target);
                         }
                         continue;
                     }

@@ -153,8 +153,9 @@ namespace NetChange {
             {
                 builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
             }
-            distUnlock(); nbLock();
+            distUnlock(); 
             int distanceEstimatesSent = 0;
+            nbLock();
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
@@ -413,6 +414,7 @@ namespace NetChange {
 
         internal short getPreferredNeighbor(short port) {
             prefLock();
+            if (!prefNeigh.ContainsKey(port)) Update(port);
             var result = prefNeigh[port];
             prefUnlock();
             return result;
