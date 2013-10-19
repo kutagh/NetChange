@@ -133,7 +133,8 @@ namespace NetChange {
             distances[PortNumber].Remove(portNumber);
             distances.Remove(portNumber);
             distUnlock(); prefLock();
-            foreach (KeyValuePair<short, short> pref in prefNeigh.Where(kvp => kvp.Value == portNumber).ToList())
+            var recomList = prefNeigh.Where(kvp => kvp.Value == portNumber).ToList();
+            foreach (KeyValuePair<short, short> pref in recomList)
             {   //remove all preferred connections going through the now possibly non-existent node
                 prefNeigh.Remove(pref.Key);
             }
@@ -142,6 +143,8 @@ namespace NetChange {
             nbLock();
             foreach (var node in neighbors)
                 Update(node.value);
+            foreach (var kvp in recomList)
+                Update(kvp.Key);
             Update(portNumber);
             nbUnlock();
         }
