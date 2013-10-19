@@ -210,7 +210,7 @@ namespace NetChange {
                         if (Globals.GetDictionary().ContainsKey(target))
                         {
                             Globals.Unlock();
-                            Globals.Get(target).SendMessage(Globals.CreatePackage("Delete", target, ""));
+                            Globals.Get(target).SendMessage(Globals.CreatePackage("Delete", target, myPortNumber.ToString()));
                             Globals.Remove(target);
                             node.RemoveNeighbor(target);
                             if (Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
@@ -277,7 +277,7 @@ namespace NetChange {
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
             Globals.Lock();
             foreach (var c in Globals.GetDictionary())
-                c.Value.SendMessage(Globals.CreatePackage("Delete", c.Key, ""));
+                c.Value.SendMessage(Globals.CreatePackage("Delete", c.Key, myPortNumber.ToString()));
             Globals.Unlock();
 
         }
@@ -337,9 +337,10 @@ namespace NetChange {
                         Globals.Get(sendTo).SendMessage(message);
                     }
                 }
-                else if (msg[0] == "Delete") {
-                    var toDelete = short.Parse(msg[1]);
-                    Globals.Remove(toDelete);
+                else if (msg[0] == "Delete" && short.Parse(msg[1]) == myPortNumber) {
+                    var toDelete = short.Parse(msg[2]);
+                    if (Globals.ContainsKey(toDelete))
+                        Globals.Remove(toDelete);
                     node.RemoveNeighbor(toDelete);
                 }
                 else node.InterpretMess(message);
