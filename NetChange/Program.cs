@@ -339,8 +339,10 @@ namespace NetChange {
                 }
                 else if (msg[0] == "Delete" && short.Parse(msg[1]) == myPortNumber) {
                     var toDelete = short.Parse(msg[2]);
+                    Globals.Lock();
                     if (Globals.ContainsKey(toDelete))
                         Globals.Remove(toDelete);
+                    Globals.Unlock();
                     node.RemoveNeighbor(toDelete);
                 }
                 else node.InterpretMess(message);
