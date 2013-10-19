@@ -20,7 +20,6 @@ namespace NetChange {
         }
 
         public static void Lock() {
-            if (connectedLocker.IsHeldByCurrentThread) return;
             var temp = false;
             while (!temp)
                 connectedLocker.Enter(ref temp);
@@ -169,7 +168,7 @@ namespace NetChange {
                 //Task.Factory.StartNew(() => ListenForMessages(c));
             }
             Globals.Unlock();
-            //AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+            AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
 #if DEBUG
             Globals.Lock();
             foreach (var client in Globals.GetDictionary()) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
@@ -200,8 +199,10 @@ namespace NetChange {
                     if (short.TryParse(input.Substring(2), out target)) {
                         Globals.Lock();
                         if (Globals.GetDictionary().ContainsKey(target)) {
+                            Globals.Unlock();
+                            Globals.Get(target).SendMessage(Globals.CreatePackage("Delete", target, ""));
+                            Globals.Remove(target);
                             node.RemoveNeighbor(target);
-                            Globals.GetDictionary().Remove(target);
                             if(Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
                         }
                         else
@@ -262,7 +263,10 @@ namespace NetChange {
         }
 
         static void CurrentDomain_ProcessExit(object sender, EventArgs e) {
-            foreach (var nb in node.neighbors) node.RemoveNeighbor(nb as NetChangeNode);
+            Globals.Lock();
+            foreach (var c in Globals.GetDictionary())
+                c.Value.SendMessage(Globals.CreatePackage("Delete", c.Key, ""));
+            Globals.Unlock();
 
         }
 
@@ -321,6 +325,11 @@ namespace NetChange {
                     var sendTo = node.getPreferredNeighbor(port);
                     Globals.Get(sendTo).SendMessage(message);
                 }
+            }
+            else if (msg[0] == "Delete") {
+                var toDelete = short.Parse(msg[1]);
+                Globals.Remove(toDelete);
+                node.RemoveNeighbor(toDelete);
             }
             else node.InterpretMess(message);
             

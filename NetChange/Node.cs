@@ -17,7 +17,6 @@ namespace NetChange {
         SpinLock nbLocker = new SpinLock();
 
         protected void nbLock() {
-            if (nbLocker.IsHeldByCurrentThread) return;
             var temp = false;
             while (!temp)
                 nbLocker.Enter(ref temp);

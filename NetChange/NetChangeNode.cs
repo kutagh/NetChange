@@ -29,13 +29,11 @@ namespace NetChange {
         SpinLock distLocker = new SpinLock(), prefLocker = new SpinLock();
 
         void distLock() {
-            if (distLocker.IsHeldByCurrentThread) return;
             var temp = false;
             while (!temp)
                 distLocker.Enter(ref temp);
         }
         void prefLock() {
-            if (prefLocker.IsHeldByCurrentThread) return;
             var temp = false;
             while (!temp)
                 prefLocker.Enter(ref temp);
