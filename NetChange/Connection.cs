@@ -59,7 +59,10 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine("Writing");
 #endif
-            writer.WriteLine(message);
+            if (message.EndsWith("\n"))
+                writer.Write(message);
+            else
+                writer.WriteLine(message);
 #if DEBUG
             Console.WriteLine("Wrote " + message);
 #endif

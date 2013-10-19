@@ -16,14 +16,14 @@ namespace NetChange {
         internal List<Node<T>> neighbors;
         SpinLock nbLocker = new SpinLock();
 
-        void nbLock() {
+        protected void nbLock() {
             if (nbLocker.IsHeldByCurrentThread) return;
             var temp = false;
             while (!temp)
                 nbLocker.Enter(ref temp);
         }
 
-        void nbUnlock() {
+        protected void nbUnlock() {
             nbLocker.Exit();
         }
 

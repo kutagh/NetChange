@@ -98,6 +98,7 @@ namespace NetChange {
                 distances[PortNumber].Add(node.value, 1);
             }
             distUnlock();
+            nbLock();
             foreach (NetChangeNode n in neighbors)
             {
 #if DEBUG
@@ -105,6 +106,7 @@ namespace NetChange {
 #endif
                 Update(n.value);
             }
+            nbUnlock();
         }
 
         /// <summary>
@@ -156,7 +158,7 @@ namespace NetChange {
             {
                 builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
             }
-            distUnlock();
+            distUnlock(); nbLock();
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
@@ -164,6 +166,7 @@ namespace NetChange {
                 while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); Globals.Lock(); }
                 Globals.Get(neighbor.value).SendMessage(package);
             }           // Sends update
+            nbUnlock();
         }
 
         public string InterpretMess(string package) {
@@ -240,8 +243,8 @@ namespace NetChange {
                 Console.WriteLine("--rec self");
                 distLock();
                 var temp = distances[portNumber];
-                distUnlock();
                 temp[portNumber] = 0;
+                distUnlock();
                 prefLock();
                 if (prefNeigh.ContainsKey(portNumber))
                     prefNeigh[portNumber] = portNumber;
@@ -399,6 +402,13 @@ namespace NetChange {
                 }
             }
             prefUnlock(); distUnlock();
+        }
+
+        internal short getPreferredNeighbor(short port) {
+            prefLock();
+            var result = prefNeigh[port];
+            prefUnlock();
+            return result;
         }
     }
     

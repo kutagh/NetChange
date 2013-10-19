@@ -68,6 +68,18 @@ namespace NetChange {
                 return connected;
             return null;
         }
+
+        static char separator = '|';
+        
+        public static string CreatePackage(string packageName, short destination, string payload) {
+            return string.Format("{0}{3}{1}{3}{2}", packageName, destination, payload, separator);
+        }
+
+        public static string[] UnpackPackage(string package) {
+            if (package.Count(x => x == '|') == 2)
+                return package.Split(separator);
+            else return new string[] { package };
+        }
     }
 
     class NetwProg {
@@ -85,7 +97,7 @@ namespace NetChange {
         static Dictionary<short,Client> Oldconnected;
         static int SlowDown = 0;
         static long DistanceEstimatesSent = 0;
-
+        static short myPortNumber;
         static string parameterError = "The {0} parameter '{1}' was not correct, please enter {2}.";
 
         static void Main(string[] args) {
@@ -106,7 +118,7 @@ namespace NetChange {
             else {
                 Console.Title = string.Format("port = {0}", args[iterator]); // Port number
             }
-            var myPortNumber = short.Parse(args[iterator]);
+            myPortNumber = short.Parse(args[iterator]);
             var list = new List<short>();
             while (++iterator < args.Length) // All neighbors
                 list.Add(short.Parse(args[iterator]));
@@ -162,14 +174,14 @@ namespace NetChange {
             Globals.Lock();
             foreach (var client in Globals.GetDictionary()) { client.Value.SendMessage("Test"); Console.WriteLine("Sent message to {0}", client.Key); }
             Globals.Unlock();
-            Console.ReadLine();
+            //Console.ReadLine();
 #endif
             while (true) {
                 var input = Console.ReadLine();
 
 
                 if (input.StartsWith("S")) {
-                    if (int.TryParse(input.Substring(2), out SlowDown) && SlowDown > 0)
+                    if (int.TryParse(input.Substring(2), out SlowDown) && SlowDown >= 0)
                         continue;
                     Console.WriteLine(parameterError, "slowdown", "n", "a positive number");
                     if (SlowDown < 0) SlowDown = 0;
@@ -214,10 +226,18 @@ namespace NetChange {
                     var split = input.Split(' ');
                     short target;
                     if (split.Length > 2 && short.TryParse(split[1], out target)) {
-                        var message = new StringBuilder(string.Format("Broadcast: {0}", split[2]));
+                        var message = new StringBuilder(split[2]);
                         for (int i = 3; i < split.Length; i++)
                             message.AppendFormat(" {0}", split[i]);
-                        Globals.Get(target).SendMessage(message.ToString());
+                        var msg = Globals.CreatePackage("Broadcast", target, message.ToString());
+                        var sendTo = node.getPreferredNeighbor(target);
+#if DEBUG
+                        Console.WriteLine("About to broadcast {0} to port {1} via port {2}", msg, target, sendTo);
+#endif
+                        Globals.Get(sendTo).SendMessage(msg);
+#if DEBUG
+                        Console.WriteLine("Sent message to {0}", target);
+#endif
                         continue;
                     }
                     if (split.Length > 2)
@@ -289,16 +309,21 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine(message);
 #endif
-            if (message.StartsWith("Broadcast: "))
+            if (SlowDown > 0)
+                Thread.Sleep(new TimeSpan(0, 0, 0, 0, SlowDown));
+
+            var msg = Globals.UnpackPackage(message);
+            if (msg[0] == "Broadcast")
             {
-                message = message.Substring("Broadcast: ".Length);
-                Console.WriteLine(message);
+                var port = short.Parse(msg[1]);
+                if (port == myPortNumber) Console.WriteLine(msg[2]);
+                else {
+                    var sendTo = node.getPreferredNeighbor(port);
+                    Globals.Get(sendTo).SendMessage(message);
+                }
             }
             else node.InterpretMess(message);
             
-            if (SlowDown > 0) 
-                Thread.Sleep(SlowDown);
-                
             // Handle messages
             ListenForMessages(c);
         }
