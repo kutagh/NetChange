@@ -315,6 +315,11 @@ namespace NetChange {
 #endif
                 bool dcontain = false;
                 distLock();
+
+                foreach (var a in distances)
+                    foreach (var b in distances[a.Key])
+                        Console.WriteLine("---rec:: {0}, {1}, {2}", a.Key, b.Key, b.Value);
+
                 foreach (var kvp in distances)  //is portNumber already noted as a possible target from anywhere?
                 {
                     if (kvp.Value.ContainsKey(portNumber))
@@ -386,11 +391,15 @@ namespace NetChange {
                     }
                     else
                     {
-                        distances[PortNumber].Add(portNumber, int.MaxValue);
                         distUnlock();
-                        Update(portNumber);
-                        hasChanged = true;
                     }
+                    //else
+                    //{
+                    //    distances[PortNumber].Add(portNumber, int.MaxValue);
+                    //    distUnlock();
+                    //    Update(portNumber);
+                    //    hasChanged = true;
+                    //}
                 }
             }
             if (hasChanged)
