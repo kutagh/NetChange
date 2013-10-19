@@ -237,7 +237,16 @@ namespace NetChange {
             {
                 Console.WriteLine("--rec self");
                 distLock();
-                distances[portNumber][portNumber] = 0;
+                if (distances.ContainsKey(portNumber))
+                    if (distances[portNumber].ContainsKey(portNumber))
+                        distances[portNumber][portNumber] = 0;
+                    else distances[portNumber].Add(portNumber, 0);
+                else
+                {
+                    var temp = new Dictionary<short, int>();
+                    temp.Add(portNumber,0);
+                    distances.Add(portNumber, temp);
+                }
                 distUnlock();
                 prefLock();
                 if (prefNeigh.ContainsKey(portNumber))

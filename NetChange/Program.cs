@@ -197,16 +197,19 @@ namespace NetChange {
                     short target;
                     if (short.TryParse(input.Substring(2), out target)) {
                         Globals.Lock();
-                        if (Globals.GetDictionary().ContainsKey(target)) {
+                        if (Globals.GetDictionary().ContainsKey(target))
+                        {
                             Globals.Unlock();
                             Globals.Get(target).SendMessage(Globals.CreatePackage("Delete", target, ""));
                             Globals.Remove(target);
                             node.RemoveNeighbor(target);
-                            if(Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
+                            if (Globals.PrintStatusChanges) Console.WriteLine("Verbinding verbroken met node {0}", target);
                         }
                         else
+                        {
                             Console.WriteLine("Port {0} is not connected to this process", target);
-                        Globals.Unlock();
+                            Globals.Unlock();
+                        }
                         continue;
                     }
                     Console.WriteLine(parameterError, "delete", "port", "a valid port number");
