@@ -194,6 +194,13 @@ namespace NetChange {
                 if (input.StartsWith("F")) {
                     var port = short.Parse(input.Substring(2));
                     Console.WriteLine("FindNeighbor returned {1} for port {0}", port, node.FindNeighbor(port) == null ? "null" : "a NetChangeNode");
+                    continue;
+                }
+
+                if (input.StartsWith("P")) {
+                    var port = short.Parse(input.Substring(2));
+                    Console.WriteLine("getPreferredNeighbor returned {1} for port {0}", port, node.getPreferredNeighbor(port));
+                    continue;
                 }
 #endif
 
@@ -235,11 +242,12 @@ namespace NetChange {
                     continue;
                 }
                 if (input.StartsWith("C")) {
-                    short target;
-                    if (short.TryParse(input.Substring(2), out target)) {
-                        Globals.Add(target, new Client(myPortNumber, target));
-                        node.AddNeighbor(target);
-                        if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", target);
+                    short port;
+                    if (short.TryParse(input.Substring(2), out port)) {
+                        var client = new Client(myPortNumber, port);
+                        Globals.Add(port, client);
+                        node.AddNeighbor(port);
+                        if(Globals.PrintStatusChanges) Console.WriteLine("Nieuwe verbinding met node {0}", port);
                         continue;
                     }
                     Console.WriteLine(parameterError, "create", "port", "a valid port number");
