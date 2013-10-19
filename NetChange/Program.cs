@@ -20,7 +20,7 @@ namespace NetChange {
             DistanceEstimatesSent = 0;
         }
 
-        public static void IncrementDistanceEstimatesSent(int n = 0) {
+        public static void IncrementDistanceEstimatesSent(int n = 1) {
             distEstLocker.Lock();
             DistanceEstimatesSent += n;
             distEstLocker.Unlock();
