@@ -56,12 +56,13 @@ namespace NetChange {
         public NetChangeNode(short portNumber, bool startUpdating = false) : base(portNumber) {
             Dictionary<short, int> temp = new Dictionary<short,int>();
             temp.Add(PortNumber, 0);
-            rtLock();
+            distLock();
             distances.Add(PortNumber, temp);
+            distUnlock(); prefLock();
             prefNeigh.Add(PortNumber, PortNumber);
-            rtUnlock();
+            prefUnlock();
             Updating = startUpdating;
-            UpdateNeighbors();
+            if(Updating) UpdateNeighbors();
         }
             
         /// <summary>
@@ -110,7 +111,8 @@ namespace NetChange {
         /// </summary>
         /// <param name="portNumber">Port number of the new neighboring NetChange node</param>
         public override void AddNeighbor(short portNumber) {
-            AddNeighbor(new NetChangeNode(portNumber));
+            var node = FindNeighbor(portNumber);
+            AddNeighbor(node == null ? new NetChangeNode(portNumber) : node);
         }
 
         /// <summary>
@@ -168,8 +170,16 @@ namespace NetChange {
             foreach (var neighbor in neighbors)
             {   //a package with update info is a string starting with addressed portNumber, sender portNumber and "DistList"
                 string package = string.Format("{0}{1}{2}{1}{3}{4}", neighbor.value.ToString(), entrySeparator, PortNumber, headerSeparator, builder.ToString());
+                var attempt = 0;
                 Globals.Lock();
-                while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); Globals.Lock(); }
+                while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) {
+#if DEBUG
+                    Console.WriteLine("Problem with {1}... attempt {0}", attempt++, neighbor.value);
+                    foreach (var kvp in Globals.GetDictionary()) Console.WriteLine("Key: {0}, value: {1}", kvp.Key, kvp.Value);
+#endif
+                    Globals.Unlock(); 
+                    Thread.Sleep(5); 
+                    Globals.Lock(); }
                 Globals.Get(neighbor.value).SendMessage(package);
                 Globals.Unlock();
                 distanceEstimatesSent++;
@@ -219,8 +229,8 @@ namespace NetChange {
                         }
                         distances.Add(sender, temp);
                         distUnlock();
-                        foreach (KeyValuePair<short, int> kvp in temp)
-                            Update(kvp.Key);                                        //we also update the connections the sender knew of
+                        foreach (KeyValuePair<short, int> kvp in temp) 
+                            Update(kvp.Key); //we also update the connections the sender knew of
                         
                         return null;
                     }
@@ -258,6 +268,8 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine("recompute of {0} for {1}", PortNumber, portNumber);
 #endif
+            FindNeighbor(portNumber);
+            Console.WriteLine("FindNeighbor is not to blame");
             bool hasChanged = false;
             if (portNumber == PortNumber)
             {
@@ -367,8 +379,8 @@ namespace NetChange {
 #if DEBUG
                             Console.WriteLine("--rec {0} unreachable", portNumber);
 #endif
-                            RemoveNeighbor(portNumber);
                             distUnlock();
+                            RemoveNeighbor(portNumber);
                             hasChanged = true;
                         }
                         else
@@ -385,10 +397,10 @@ namespace NetChange {
                 {
                     if (Globals.ContainsKey(portNumber))
                     {
-                        prefLock();
                         distances[PortNumber].Add(portNumber, 1);
+                        distUnlock(); prefLock();
                         prefNeigh.Add(portNumber, portNumber);
-                        prefUnlock(); distUnlock();
+                        prefUnlock(); 
                         hasChanged = true;
                     }
                     else
@@ -438,12 +450,14 @@ namespace NetChange {
 
         internal void PrintRoutingTable() {
             Console.WriteLine("Routing table of {0}:", PortNumber);
-            distLock(); prefLock();
+            distLock(); 
             Console.WriteLine("to self ({0}): {1}", PortNumber, distances[PortNumber][PortNumber]);
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
                 if (kvp.Key != PortNumber)
                 {
+                    distUnlock();
+                    prefLock();
                     try
                     {
                         Console.WriteLine("to port {0} via {1}: {2}", kvp.Key, prefNeigh[kvp.Key], kvp.Value);
@@ -452,9 +466,11 @@ namespace NetChange {
                     {
                         Console.WriteLine("to port {0} via undef: {1}", kvp.Key, kvp.Value);
                     }
+                    prefUnlock();
+                    distLock();
                 }
             }
-            prefUnlock(); distUnlock();
+             distUnlock();
         }
 
         internal short getPreferredNeighbor(short port) {

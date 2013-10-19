@@ -1,4 +1,14 @@
-﻿using System;
+﻿/* Ian Zunderdorp (3643034) & Bas Brouwer (3966747)
+ * 
+ * Before compiling the program, first set the solution configuration to Release. See:
+ * Voordat je de programma compileert, zet eerst de solution configuration op Release. Zie daarvoor:
+ * (text) http://msdn.microsoft.com/en-us/library/vstudio/bb166577%28v=vs.100%29.aspx
+ * (visual) http://www2.warwick.ac.uk/fac/sci/physics/staff/research/bmorgan/geant4/installingonwindows/step_10_set_build_configuration.png
+ * 
+ */
+
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -26,14 +36,6 @@ namespace NetChange {
 
         public static void Unlock() {
             connectedLocker.Unlock();
-        }
-
-        public static int DropLock() {
-            return connectedLocker.DropLock();
-        }
-
-        public static void RestoreLock(int c) {
-            connectedLocker.RestoreLock(c);
         }
 
         public static void Remove(short p) {
@@ -142,7 +144,7 @@ namespace NetChange {
 
             // Set up local graph
             node = new NetChangeNode(myPortNumber);
-            foreach (var port in list) node.AddNeighbor(port);
+            foreach (var port in list.Where(x => x > myPortNumber)) node.AddNeighbor(port);
             
             server = new Server(myPortNumber);
             // Create listener

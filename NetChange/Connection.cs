@@ -67,7 +67,9 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine("Wrote " + message);
             }
-            catch { }
+            catch {
+                throw new IOException();
+            }
 #endif
         }
 
