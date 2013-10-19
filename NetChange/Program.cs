@@ -190,6 +190,12 @@ namespace NetChange {
             while (true) {
                 var input = Console.ReadLine();
 
+#if DEBUG
+                if (input.StartsWith("F")) {
+                    var port = short.Parse(input.Substring(2));
+                    Console.WriteLine("FindNeighbor returned {1} for port {0}", port, node.FindNeighbor(port) == null ? "null" : "a NetChangeNode");
+                }
+#endif
 
                 if (input.StartsWith("S")) {
                     if (int.TryParse(input.Substring(2), out SlowDown) && SlowDown >= 0)
