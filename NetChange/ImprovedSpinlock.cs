@@ -12,12 +12,12 @@ namespace NetChange {
         public ImprovedSpinlock(string name) {
             this.name = name;
         }
-        public void Lock() {
-            if (locker.IsHeldByCurrentThread) {
+        public void Lock(bool mayLayer = true) {
+            if (mayLayer && locker.IsHeldByCurrentThread) {
                 Interlocked.Increment(ref counter);
                 return;
             }
-            else if (locker.IsHeld) {
+            else if (mayLayer && locker.IsHeld) {
                 Console.WriteLine("Lock {0} is already being held", name);
             }
             var temp = false;

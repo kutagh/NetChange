@@ -5,6 +5,10 @@
  * (text) http://msdn.microsoft.com/en-us/library/vstudio/bb166577%28v=vs.100%29.aspx
  * (visual) http://www2.warwick.ac.uk/fac/sci/physics/staff/research/bmorgan/geant4/installingonwindows/step_10_set_build_configuration.png
  * 
+ * M:   Number of distance estimations sent to every other processes by the currently running proces. 
+ *      Those distance estimations are compiled once and then sent to all neighbors of said proces. 
+ *      Thus for a constant n processes connected, this number is c*n,
+ *      where c is the number of distance estimates sent to the other processes.
  */
 
 
@@ -45,7 +49,7 @@ namespace NetChange {
         }
 
         public static void IncrementTotalDistanceEstimatesSent(int n = 1) {
-            distEstLocker.Lock();
+            distEstLocker.Lock(false);
             TotalDistanceEstimatesSent += n;
             distEstLocker.Unlock();
         }
