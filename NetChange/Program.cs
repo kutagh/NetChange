@@ -9,11 +9,23 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace NetChange {
-    static class Globals {
+    internal static class Globals {
         private static Dictionary<short, Client> connected = new Dictionary<short, Client>();
+        public static long DistanceEstimatesSent { get; private set; }
         public static bool PrintStatusChanges = false;
 
-        private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock();
+        private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock(), distEstLocker = new ImprovedSpinlock();
+        
+        static Globals() {
+            DistanceEstimatesSent = 0;
+        }
+
+        public static void IncrementDistanceEstimatesSent(int n = 0) {
+            distEstLocker.Lock();
+            DistanceEstimatesSent += n;
+            distEstLocker.Unlock();
+        }
+
         public static void Add(short p, Client c) {
             Lock();
             connected.Add(p, c);
@@ -81,6 +93,7 @@ namespace NetChange {
     }
 
     class NetwProg {
+        #region Console Window code
         const int SWP_NOSIZE = 0x0001; //Ignores the resize parameters when calling SetWindowPos.
         [DllImport("kernel32.dll", ExactSpelling = true)]
         private static extern IntPtr GetConsoleWindow();
@@ -89,12 +102,11 @@ namespace NetChange {
 
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+        #endregion
         
         static NetChangeNode node;
         static Server server;
-        static Dictionary<short,Client> Oldconnected;
         static int SlowDown = 0;
-        static long DistanceEstimatesSent = 0;
         static short myPortNumber;
         static string parameterError = "The {0} parameter '{1}' was not correct, please enter {2}.";
 
@@ -108,7 +120,6 @@ namespace NetChange {
             int iterator = 0;
             if (args[0][0] == 'p') {
                 // Set console position
-                //Console.SetWindowPosition(int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)));
                 SetWindowPos(MyConsole, 0, int.Parse(args[0].Substring(1)), int.Parse(args[1].Substring(1)), 0, 0, SWP_NOSIZE);
                 iterator += 2;
                 Console.Title = string.Format("port = {0}, x = {1}, y = {2}", args[iterator], args[0].Substring(1), args[1].Substring(1)); // Port number
@@ -125,8 +136,7 @@ namespace NetChange {
             // Create listener
             Thread th = new Thread(new ThreadStart(Listen));
             th.Start();
-            //Task task = new Task(Listen);
-            //task.Start();
+            
             var connectWith = list.Where(x => x > myPortNumber); // Filter the neighbors with a lower port number
             foreach (var port in connectWith) {
                 bool retry = true;
@@ -190,7 +200,7 @@ namespace NetChange {
                     continue;
                 }
                 if (input.StartsWith("M")) {
-                    Console.WriteLine("Total number of distance estimations sent: {0}", DistanceEstimatesSent);
+                    Console.WriteLine("Total number of distance estimations sent: {0}", Globals.DistanceEstimatesSent);
                     continue;
                 }
                 if (input.StartsWith("D")) {
