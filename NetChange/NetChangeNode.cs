@@ -254,15 +254,25 @@ namespace NetChange {
                 Console.WriteLine("--rec {0} is neighbor", portNumber);
                 distLock();
                 if (distances[PortNumber].ContainsKey(portNumber))
-                    distances[PortNumber][portNumber] = 1;
-                else distances[PortNumber].Add(portNumber, 1);
+                {
+                    if (distances[PortNumber][portNumber] != 1)
+                    {
+                        distances[PortNumber][portNumber] = 1;
+                        hasChanged = true;
+                    }
+                }
+                else
+                {
+                    hasChanged = true;
+                    distances[PortNumber].Add(portNumber, 1);
+                }
                 distUnlock();
                 prefLock();
                 if (prefNeigh.ContainsKey(portNumber))
                     prefNeigh[portNumber] = portNumber;
                 else prefNeigh.Add(portNumber, portNumber);
                 prefUnlock();
-                hasChanged = true;
+                
             }
             else
             {
