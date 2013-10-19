@@ -79,7 +79,7 @@ namespace NetChange {
 
             Console.WriteLine("Add {0} to {1} listed neighbors", node.value, PortNumber);
             Dictionary<short, int> temp = new Dictionary<short, int>();
-            temp.Add(PortNumber, 1);
+            temp.Add(PortNumber, int.MaxValue);
             distLock();
             if (distances.ContainsKey(node.value))
             {
@@ -91,11 +91,11 @@ namespace NetChange {
             }
             if (distances[PortNumber].ContainsKey(node.value))
             {
-                distances[PortNumber][node.value] = 1;
+                distances[PortNumber][node.value] = int.MaxValue;
             }
             else
             {
-                distances[PortNumber].Add(node.value, 1);
+                distances[PortNumber].Add(node.value, int.MaxValue);
             }
             distUnlock();
             nbLock();
@@ -250,7 +250,7 @@ namespace NetChange {
                     prefNeigh[portNumber] = portNumber;
                 else prefNeigh.Add(portNumber, portNumber);
                 prefUnlock();
-                hasChanged = true;
+                //hasChanged = true;
             }
             else if (FindNeighbor(portNumber) != null)
             {
