@@ -14,10 +14,32 @@ namespace NetChange {
         public static long TotalDistanceEstimatesSent { get; private set; }
         public static bool PrintStatusChanges = false;
 
-        private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock(), distEstLocker = new ImprovedSpinlock();
+        private static ImprovedSpinlock connectedLocker = new ImprovedSpinlock("connLocker"), distEstLocker = new ImprovedSpinlock("estLocker");
         
         static Globals() {
             TotalDistanceEstimatesSent = 0;
+        }
+
+        public static void Lock() {
+            connectedLocker.Lock();
+        }
+
+        public static void Unlock() {
+            connectedLocker.Unlock();
+        }
+
+        public static int DropLock() {
+            return connectedLocker.DropLock();
+        }
+
+        public static void RestoreLock(int c) {
+            connectedLocker.RestoreLock(c);
+        }
+
+        public static void Remove(short p) {
+            Lock();
+            connected.Remove(p);
+            Unlock();
         }
 
         public static void IncrementTotalDistanceEstimatesSent(int n = 1) {
@@ -29,20 +51,6 @@ namespace NetChange {
         public static void Add(short p, Client c) {
             Lock();
             connected.Add(p, c);
-            Unlock();
-        }
-
-        public static void Lock() {
-            connectedLocker.Lock();
-        }
-
-        public static void Unlock() {
-            connectedLocker.Unlock();
-        }
-
-        public static void Remove(short p) {
-            Lock();
-            connected.Remove(p);
             Unlock();
         }
 
@@ -316,6 +324,10 @@ namespace NetChange {
             var port = client.ParseHandshake(handShake);
             if (port < 0) { Console.WriteLine("Didn't get a valid handshake. Handshake message: '{0}'", handShake); Listen(); }
             else {
+                //node.nbLocker.Lock();
+                //node.rtLock();
+                //node.Updating = false;
+                //node.AddNeighbor(port);
 #if DEBUG   
             Console.WriteLine("Adding to list of connected clients");
 #endif
@@ -326,7 +338,10 @@ namespace NetChange {
 #endif
                 Thread listener = new Thread(new ThreadStart(() => ListenForMessages(client)));
                 listener.Start();
-
+                //node.Updating = true;
+                //node.Update();
+                //node.nbLocker.Unlock();
+                //node.rtUnlock();
                 node.AddNeighbor(port);
 #if DEBUG
             Console.WriteLine("Accepted connection");

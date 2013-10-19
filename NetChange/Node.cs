@@ -14,7 +14,7 @@ namespace NetChange {
     class Node<T> {
         internal T value;
         internal List<Node<T>> neighbors;
-        ImprovedSpinlock nbLocker = new ImprovedSpinlock();
+        internal ImprovedSpinlock nbLocker = new ImprovedSpinlock("nbLocker");
 
         protected void nbLock() {
             nbLocker.Lock();
