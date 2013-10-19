@@ -155,10 +155,12 @@ namespace NetChange {
         public void UpdateNeighbors() {
             // convert distances[PortNumber] to string representation
             var builder = new StringBuilder();
+            int numberOfDistanceEstimatesPerPackage = 0;
             distLock();
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
                 builder.AppendFormat("{0}{1}{2}{3}", entrySeparator, kvp.Key.ToString(), valueSeparator, kvp.Value.ToString());
+                numberOfDistanceEstimatesPerPackage++;
             }
             distUnlock(); 
             int distanceEstimatesSent = 0;
@@ -173,7 +175,7 @@ namespace NetChange {
                 distanceEstimatesSent++;
             }           // Sends update
             nbUnlock();
-            Globals.IncrementTotalDistanceEstimatesSent(distanceEstimatesSent);
+            Globals.IncrementTotalDistanceEstimatesSent(distanceEstimatesSent * numberOfDistanceEstimatesPerPackage);
         }
 
         public string InterpretMess(string package) {
