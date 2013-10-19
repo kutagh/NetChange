@@ -73,7 +73,6 @@ namespace NetChange {
             var toRemove = FindNeighbor(value);
             if (toRemove == null) return; // Safety check so we don't remove a neighbor that isn't a neighbor
             RemoveNeighbor(toRemove);
-            toRemove.RemoveNeighbor(this, false);
         }
 
         /// <summary>

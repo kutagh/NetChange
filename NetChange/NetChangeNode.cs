@@ -181,17 +181,17 @@ namespace NetChange {
             string[] unwrap = package.Split(entrySeparator);
             try
             {
-                short senderNr = short.Parse(unwrap[0]);
+                short sentTo = short.Parse(unwrap[0]);
                 short sender = short.Parse(unwrap[1]);
-                if (Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
-                if (senderNr != PortNumber)
+                if (Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, sentTo);
+                if (sentTo != PortNumber)
                 {
                     prefLock();
-                    short nextStep = prefNeigh[senderNr];
+                    short nextStep = prefNeigh[sentTo];
                     prefUnlock();
                     Globals.Get(nextStep).SendMessage(package);
                     // Forwards message
-                    if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", senderNr, prefNeigh);
+                    if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", sentTo, prefNeigh);
                     return null;
                 }
                 else
@@ -315,7 +315,7 @@ namespace NetChange {
 #endif
                 bool dcontain = false;
                 distLock();
-                foreach (var kvp in distances)  //is portNumber allready noted as a possible target from anywhere?
+                foreach (var kvp in distances)  //is portNumber already noted as a possible target from anywhere?
                 {
                     if (kvp.Value.ContainsKey(portNumber))
                     {
