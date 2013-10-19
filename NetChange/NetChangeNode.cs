@@ -22,9 +22,9 @@ namespace NetChange {
         string messheadseparator = "TextMess";
 
         public Dictionary<short, Dictionary<short, int>> distances = new Dictionary<short, Dictionary<short, int>>();
-            //list of known nodes and distances to the others from there
+            //list of known nodes and distances to the others from there (whose list(1), connected to(2), distance from 1 to 2)
         public Dictionary<short, short> prefNeigh = new Dictionary<short, short>(); 
-            //to whom to send messages when it has to go to some node
+            //to whom to send messages when it has to go to some node (who you need, where to send it)
 
         ImprovedSpinlock distLocker = new ImprovedSpinlock(), prefLocker = new ImprovedSpinlock();
 
@@ -128,18 +128,23 @@ namespace NetChange {
                 return;
             base.RemoveNeighbor(portNumber);
             distLock();
-            foreach (KeyValuePair<short,Dictionary<short, int>> dic1 in distances)
-            {   //remove all instances of connections with portNumber in distances
-                dic1.Value.Remove(portNumber);
-            }
+            //foreach (KeyValuePair<short,Dictionary<short, int>> dic1 in distances)
+            //{   //remove all instances of connections with portNumber in distances
+            //    dic1.Value.Remove(portNumber);
+            //}
             distances.Remove(portNumber);
             distUnlock(); prefLock();
             foreach (KeyValuePair<short, short> pref in prefNeigh.Where(kvp => kvp.Value == portNumber).ToList())
             {   //remove all preferred connections going through the now possibly non-existent node
                 prefNeigh.Remove(pref.Key);
             }
+            prefNeigh.Remove(portNumber);
             prefUnlock();
+            nbLock();
+            foreach (var node in neighbors)
+                Update(node.value);
             Update(portNumber);
+            nbUnlock();
         }
 
         /// <summary>
