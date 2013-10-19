@@ -169,48 +169,53 @@ namespace NetChange {
         public string InterpretMess(string package) {
             // convert package back to a distances[portNumber]
             string[] unwrap = package.Split(entrySeparator);
-            short senderNr = short.Parse(unwrap[0]);
-            short sender = short.Parse(unwrap[1]);
-            if (Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
-            if (senderNr != PortNumber)
+            try
             {
-                prefLock();
-                short nextStep = prefNeigh[senderNr];
-                prefUnlock();
-                Globals.Get(nextStep).SendMessage(package);
-                        // Forwards message
-                if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", senderNr, prefNeigh);
-                return null;
-            }
-            else
-            {
-                if (unwrap[2] == headerSeparator)
+                short senderNr = short.Parse(unwrap[0]);
+                short sender = short.Parse(unwrap[1]);
+                if (Globals.PrintStatusChanges) Console.WriteLine("Bericht van node {0} voor node {1}", sender, senderNr);
+                if (senderNr != PortNumber)
                 {
-#if DEBUG
-                    Console.WriteLine("unwrapped DistList");
-#endif
-                    distLock();
-                    if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
-                    distUnlock();
-                    Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
-                    for (int i = 2; i < unwrap.Length; i++)
-                    {
-                        string[] unpack = unwrap[i].Split(valueSeparator);
-                        temp.Add(short.Parse(unpack[0]), int.Parse(unpack[1]));
-                    }
-                    distLock();
-                    distances.Add(sender, temp);
-                    foreach (KeyValuePair<short, int> kvp in distances[sender])
-                        Update(kvp.Key);                                        //we also update the connections the sender knew of
-                    distUnlock();
+                    prefLock();
+                    short nextStep = prefNeigh[senderNr];
+                    prefUnlock();
+                    Globals.Get(nextStep).SendMessage(package);
+                    // Forwards message
+                    if (Globals.PrintStatusChanges) Console.WriteLine("Bericht voor node {0} verstuurd naar node {1}", senderNr, prefNeigh);
                     return null;
                 }
-                else if (unwrap[2] == messheadseparator)
+                else
                 {
-                    return unwrap[3];
+                    if (unwrap[2] == headerSeparator)
+                    {
+#if DEBUG
+                        Console.WriteLine("unwrapped DistList");
+#endif
+                        distLock();
+                        if (distances.ContainsKey(sender)) distances.Remove(sender); //we throw away the previous list of the sender
+                        Dictionary<short, int> temp = new Dictionary<short, int>();  //and build up a fresh one
+                        Console.WriteLine(unwrap.Length.ToString());
+                        for (int i = 3; i < unwrap.Length; i++)
+                        {
+                            string[] unpack = unwrap[i].Split(valueSeparator);
+                            temp.Add(short.Parse(unpack[0]), int.Parse(unpack[1]));
+                            Console.WriteLine("--unwrap of {0}; {1}, {2}", PortNumber, unpack[0], unpack[1]);
+                        }
+                        distances.Add(sender, temp);
+                        distUnlock();
+                        foreach (KeyValuePair<short, int> kvp in temp)
+                            Update(kvp.Key);                                        //we also update the connections the sender knew of
+                        
+                        return null;
+                    }
+                    else if (unwrap[2] == messheadseparator)
+                    {
+                        return unwrap[3];
+                    }
+                    else throw new NotImplementedException();
                 }
-                else throw new NotImplementedException();
             }
+            catch { return null; }
         }
 
         /// <summary>
@@ -232,6 +237,7 @@ namespace NetChange {
             bool hasChanged = false;
             if (portNumber == PortNumber)
             {
+                Console.WriteLine("--rec self");
                 distLock();
                 var temp = distances[portNumber];
                 distUnlock();
@@ -243,7 +249,7 @@ namespace NetChange {
                 prefUnlock();
                 hasChanged = true;
             }
-            else if (Globals.ContainsKey(portNumber))
+            else if (FindNeighbor(portNumber) != null)
             {
                 Console.WriteLine("--rec {0} is neighbor", portNumber);
                 distLock();
@@ -271,6 +277,7 @@ namespace NetChange {
                         break;
                     }
                 }
+
                 if (dcontain)
                 {
                     Console.WriteLine("--rec {0} known as possible target", portNumber);
@@ -299,26 +306,33 @@ namespace NetChange {
                     }
                     else
                     {
-                        distUnlock();
-                        PrintRoutingTable();
-                        Thread.Sleep(1000);
-                        //RemoveNeighbor(portNumber);
-                        hasChanged = true;
+                        if (d.Key > -1)
+                        {
+                            Console.WriteLine("--rec {0} unreachable", portNumber);
+                            RemoveNeighbor(portNumber);
+                            distUnlock();
+                            hasChanged = true;
+                        }
+                        else
+                        {
+                            distUnlock();
+                            Console.WriteLine("--rec No MinDist");
+                            hasChanged = true;
+                        }
                     }
                 }
                 else
                 {
                     if (Globals.ContainsKey(portNumber))
                     {
-                        rtLock();
+                        prefLock();
                         distances[PortNumber].Add(portNumber, 1);
                         prefNeigh[portNumber] = portNumber;
-                        rtUnlock();
+                        prefUnlock(); distUnlock();
                         hasChanged = true;
                     }
                     else
                     {
-                        distLock();
                         distances[PortNumber].Add(portNumber, int.MaxValue);
                         distUnlock();
                         Update(portNumber);
@@ -334,6 +348,7 @@ namespace NetChange {
 
         public KeyValuePair<short, int> minDist(Dictionary<short, Dictionary<short, int>> dic1, short targetNr)
         {
+            Console.WriteLine("--minDist by {0}: target {1}", PortNumber, targetNr);
             if (Globals.ContainsKey(targetNr))
                 return new KeyValuePair<short, int>(targetNr, 0);
             KeyValuePair<short, int> result = new KeyValuePair<short, int>(-1, int.MaxValue);
@@ -342,27 +357,38 @@ namespace NetChange {
                 {   //if the first of the connection tuples is a neighbor
                     foreach (KeyValuePair<short, int> node2 in node1.Value)
                     {   //get the distance to the target
+                        Console.WriteLine("-minD {0}, {1}, {2}", node1.Key, node2.Key, node2.Value);
                         if (node2.Key == targetNr && node2.Value < result.Value)
                         {
+                            Console.WriteLine("-minD new result");
                             result = new KeyValuePair<short, int>(node1.Key, node2.Value);
                         } 
                     }
                 }
+            Console.WriteLine("--minDist output: {0}, {1}", result.Key, result.Value);
             return result; //return the smallest
         }
 
         internal void PrintRoutingTable() {
 
             Console.WriteLine("Routing table of {0}:", PortNumber);
-            distLock();
+            distLock(); prefLock();
             Console.WriteLine("to self ({0}): {1}", PortNumber, distances[PortNumber][PortNumber]);
             foreach (KeyValuePair<short, int> kvp in distances[PortNumber])
             {
                 if (kvp.Key != PortNumber)
-                    Console.WriteLine("to port {0} via {1}: {2}", kvp.Key, //prefNeigh[kvp.Key], 
-                        10, kvp.Value);
+                {
+                    try
+                    {
+                        Console.WriteLine("to port {0} via {1}: {2}", kvp.Key, prefNeigh[kvp.Key], kvp.Value);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("to port {0} via undef: {1}", kvp.Key, kvp.Value);
+                    }
+                }
             }
-            distUnlock();
+            prefUnlock(); distUnlock();
         }
     }
     

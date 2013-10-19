@@ -288,12 +288,14 @@ namespace NetChange {
             var message = c.ReadMessage();
 #if DEBUG
             Console.WriteLine(message);
-#else
-            if (message.StartsWith("Broadcast: ")) {
+#endif
+            if (message.StartsWith("Broadcast: "))
+            {
                 message = message.Substring("Broadcast: ".Length);
                 Console.WriteLine(message);
             }
-#endif
+            else node.InterpretMess(message);
+            
             if (SlowDown > 0) 
                 Thread.Sleep(SlowDown);
                 
