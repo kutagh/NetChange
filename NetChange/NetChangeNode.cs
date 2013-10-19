@@ -116,8 +116,7 @@ namespace NetChange {
         /// </summary>
         /// <param name="node">NetChange node to remove as neighbor</param>
         public void RemoveNeighbor(NetChangeNode node) {
-            base.RemoveNeighbor(node);
-            Update(node.value);
+            RemoveNeighbor(node.value);
         }
 
         /// <summary>
@@ -125,6 +124,8 @@ namespace NetChange {
         /// </summary>
         /// <param name="portNumber">Port number of neighbor to remove</param>
         public override void RemoveNeighbor(short portNumber) {
+            if (portNumber == PortNumber)   //DO NOT REMOVE YOURSELF DAMNIT
+                return;
             base.RemoveNeighbor(portNumber);
             distLock();
             foreach (KeyValuePair<short,Dictionary<short, int>> dic1 in distances)
