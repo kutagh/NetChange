@@ -380,7 +380,7 @@ namespace NetChange {
                     {
                         prefLock();
                         distances[PortNumber].Add(portNumber, 1);
-                        prefNeigh[portNumber] = portNumber;
+                        prefNeigh.Add(portNumber, portNumber);
                         prefUnlock(); distUnlock();
                         hasChanged = true;
                     }
