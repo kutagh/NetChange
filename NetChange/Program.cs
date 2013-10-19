@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -308,33 +309,34 @@ namespace NetChange {
 #if DEBUG
             Console.WriteLine("Listening for messages from {0}", c.ConnectedTo);
 #endif
-
-            var message = c.ReadMessage();
+            try {
+                var message = c.ReadMessage();
 #if DEBUG
-            Console.WriteLine(message);
+                Console.WriteLine(message);
 #endif
-            if (SlowDown > 0)
-                Thread.Sleep(new TimeSpan(0, 0, 0, 0, SlowDown));
+                if (SlowDown > 0)
+                    Thread.Sleep(new TimeSpan(0, 0, 0, 0, SlowDown));
 
-            var msg = Globals.UnpackPackage(message);
-            if (msg[0] == "Broadcast")
-            {
-                var port = short.Parse(msg[1]);
-                if (port == myPortNumber) Console.WriteLine(msg[2]);
-                else {
-                    var sendTo = node.getPreferredNeighbor(port);
-                    Globals.Get(sendTo).SendMessage(message);
+                var msg = Globals.UnpackPackage(message);
+                if (msg[0] == "Broadcast") {
+                    var port = short.Parse(msg[1]);
+                    if (port == myPortNumber) Console.WriteLine(msg[2]);
+                    else {
+                        var sendTo = node.getPreferredNeighbor(port);
+                        Globals.Get(sendTo).SendMessage(message);
+                    }
                 }
+                else if (msg[0] == "Delete") {
+                    var toDelete = short.Parse(msg[1]);
+                    Globals.Remove(toDelete);
+                    node.RemoveNeighbor(toDelete);
+                }
+                else node.InterpretMess(message);
+
+                // Handle messages
+                ListenForMessages(c);
             }
-            else if (msg[0] == "Delete") {
-                var toDelete = short.Parse(msg[1]);
-                Globals.Remove(toDelete);
-                node.RemoveNeighbor(toDelete);
-            }
-            else node.InterpretMess(message);
-            
-            // Handle messages
-            ListenForMessages(c);
+            catch (IOException) { }
         }
     }
 }
