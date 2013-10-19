@@ -159,6 +159,7 @@ namespace NetChange {
                 Globals.Lock();
                 while (!Globals.GetDictionary().Keys.Contains(neighbor.value)) { Globals.Unlock(); Thread.Sleep(5); Globals.Lock(); }
                 Globals.Get(neighbor.value).SendMessage(package);
+                Globals.Unlock();
             }           // Sends update
             nbUnlock();
         }
